@@ -82,12 +82,14 @@ enum SidebarIcon: CaseIterable {
 struct SidebarView: View {
   @Binding var selectedIcon: SidebarIcon
   @ObservedObject private var badgeManager = NotificationBadgeManager.shared
-  @ObservedObject private var authManager = DayflowAuthManager.shared
 
   private var visibleIcons: [SidebarIcon] {
     SidebarIcon.allCases.filter { icon in
-      if icon == .journal || icon == .agents { return false }
-      if icon == .flow { return SidebarView.showsFlowTab(flowEnabled: authManager.flowEnabled) }
+      if icon == .journal || icon == .weekly || icon == .chat || icon == .agents || icon == .daily
+        || icon == .flow
+      {
+        return false
+      }
       return true
     }
   }

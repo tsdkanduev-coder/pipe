@@ -3,6 +3,7 @@
 //  Dayflow
 //
 
+import ShadcnUI
 import SwiftUI
 
 struct TimelineCalendarButtonFramePreferenceKey: PreferenceKey {
@@ -33,13 +34,66 @@ enum LogoPosition {
 
 extension MainView {
   var contentStack: some View {
-    // Two-column layout: left logo + sidebar; right white panel with header, filters, timeline
-    HStack(alignment: .top, spacing: 0) {
-      leftColumn
-      rightPanel
+    NavigationSplitView {
+      List(selection: splitSelection) {
+        Section("Days") {
+          ForEach(recentTimelineDays, id: \.self) { day in
+            Text(timelineDayLabel(day))
+              .tag(Optional(day))
+          }
+        }
+      }
+      .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 260)
+      .safeAreaInset(edge: .bottom) {
+        ShadcnButton("Settings", systemImage: "gearshape", variant: .ghost, fillsWidth: true) {
+          selectedIcon = .settings
+        }
+        .padding(Space.x2)
+      }
+    } detail: {
+      Group {
+        if selectedIcon == .settings {
+          SettingsView()
+            .padding(Space.x4)
+        } else if selectedIcon == .bug {
+          BugReportView()
+            .padding(Space.x4)
+        } else {
+          GeometryReader { geo in
+            timelinePanel(geo: geo)
+          }
+        }
+      }
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    .padding(0)
+    .navigationSplitViewStyle(.balanced)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+  }
+
+  private var splitSelection: Binding<Date?> {
+    Binding(
+      get: { selectedDate },
+      set: { newValue in
+        if let newValue {
+          selectedDate = newValue
+          selectedIcon = .timeline
+        }
+      }
+    )
+  }
+
+  private var recentTimelineDays: [Date] {
+    let today = timelineDisplayDate(from: Date())
+    return (0..<14).compactMap { offset in
+      Calendar.current.date(byAdding: .day, value: -offset, to: today)
+    }.map { timelineDisplayDate(from: $0) }
+  }
+
+  private func timelineDayLabel(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .none
+    return formatter.string(from: date)
   }
 
   private var leftColumn: some View {
@@ -74,52 +128,7 @@ extension MainView {
 
   @ViewBuilder
   private var rightPanel: some View {
-    // Right column: Main white panel including header + content
-    ZStack {
-      switch selectedIcon {
-      case .settings:
-        SettingsView()
-          .padding(15)
-      case .chat:
-        ChatPanelView()
-      case .flow:
-        FlowView()
-      case .agents:
-        AgentsView()
-      case .daily:
-        DailyView(selectedDate: $selectedDate)
-      case .weekly:
-        WeeklyView()
-      case .journal:
-        JournalView()
-          .padding(15)
-      case .bug:
-        BugReportView()
-          .padding(15)
-      case .timeline:
-        GeometryReader { geo in
-          timelinePanel(geo: geo)
-        }
-      }
-    }
-    .padding(0)
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    .background(mainPanelBackground)
-  }
-
-  private var mainPanelBackground: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(SledChrome.paper)
-        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 0)
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(SledChrome.paper)
-        .blendMode(.destinationOut)
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(SledChrome.paper.opacity(0.22))
-    }
-    .compositingGroup()
+    EmptyView()
   }
 
   private func timelinePanel(geo: GeometryProxy) -> some View {
@@ -172,6 +181,13 @@ extension MainView {
 
   private var timelineContent: some View {
     VStack(alignment: .leading, spacing: 12) {
+      if !ScreenRecordingPermissionNotice.isGranted {
+        SledRecordingDisabledView()
+          .frame(maxWidth: .infinity, minHeight: 120)
+      } else if !LocalLLMRuntimeStatus.current().isReady {
+        SledNoLocalModelBanner()
+      }
+
       TabFilterBar(
         categories: categoryStore.editableCategories,
         idleCategory: categoryStore.idleCategory,

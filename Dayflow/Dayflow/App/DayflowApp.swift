@@ -3,6 +3,7 @@
 //  Dayflow
 //
 
+import ShadcnUI
 import Sparkle
 import SwiftUI
 
@@ -186,7 +187,7 @@ struct DayflowApp: App {
         }
 
         // Journal onboarding video (full window coverage, above sidebar)
-        if journalCoordinator.showOnboardingVideo {
+        if false, journalCoordinator.showOnboardingVideo {
           JournalOnboardingVideoView(onComplete: {
             withAnimation(.easeOut(duration: 0.3)) {
               journalCoordinator.showOnboardingVideo = false
@@ -201,19 +202,7 @@ struct DayflowApp: App {
       .background {
         MainWindowRegistrationView()
 
-        if didOnboard {
-          ZStack {
-            Image("MainUIBackground")
-              .resizable()
-              .scaledToFill()
-
-            SledChrome.paper
-              .opacity(0.4)
-          }
-          .ignoresSafeArea()
-          .allowsHitTesting(false)
-          .accessibilityHidden(true)
-        }
+        EmptyView()
       }
       .onAppear {
         if !showVideoLaunch {
@@ -228,8 +217,8 @@ struct DayflowApp: App {
         }
       }
       .frame(minWidth: 900, maxWidth: .infinity, minHeight: 508, maxHeight: .infinity)
+      .shadcnSurface(SledShadcnTheme.current)
     }
-    .windowStyle(.hiddenTitleBar)
     .windowResizability(.contentMinSize)
     .defaultSize(width: 1195, height: 675)
 

@@ -12,6 +12,7 @@
 		C4AD00032F0D00010000000C /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = C4AD00022F0D00010000000B /* MarkdownUI */; };
 		C4D74EB12E3608B5005E3CD7 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C4D74EB02E3608B5005E3CD7 /* Sparkle */; };
 		C4EBF0022DBDF82000FC5824 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = C4EBF0012DBDF82000FC5824 /* GRDB */; };
+		SLDK00032F3100010000000C /* ShadcnUI in Frameworks */ = {isa = PBXBuildFile; productRef = SLDK00022F3100010000000B /* ShadcnUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +62,7 @@
 				C4D74EB12E3608B5005E3CD7 /* Sparkle in Frameworks */,
 				C469402F2E8C947E00CA648B /* Sentry in Frameworks */,
 				C4AD00032F0D00010000000C /* MarkdownUI in Frameworks */,
+				SLDK00032F3100010000000C /* ShadcnUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +129,7 @@
 				C4A035B02E6CFEC600DE0FBD /* PostHog */,
 				C469402E2E8C947E00CA648B /* Sentry */,
 				C4AD00022F0D00010000000B /* MarkdownUI */,
+				SLDK00022F3100010000000B /* ShadcnUI */,
 			);
 			productName = Dayflow;
 			productReference = C4C1D2A12DB56805007D5A55 /* Dayflow.app */;
@@ -213,6 +216,7 @@
 				C4A035AF2E6CFEC600DE0FBD /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				C469402D2E8C947E00CA648B /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				C4AD00012F0D00010000000A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				SLDK00012F3100010000000A /* XCRemoteSwiftPackageReference "ShadKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C4C1D2A22DB56805007D5A55 /* Products */;
@@ -658,6 +662,14 @@
 				kind = branch;
 			};
 		};
+		SLDK00012F3100010000000A /* XCRemoteSwiftPackageReference "ShadKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jasonkneen/ShadKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -685,6 +697,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C4EBF0002DBDF82000FC5824 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
+		};
+		SLDK00022F3100010000000B /* ShadcnUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SLDK00012F3100010000000A /* XCRemoteSwiftPackageReference "ShadKit" */;
+			productName = ShadcnUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

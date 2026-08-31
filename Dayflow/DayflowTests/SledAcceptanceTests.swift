@@ -123,18 +123,12 @@ final class SledAcceptanceTests: XCTestCase {
     }
   }
 
-  func testChromeTokensArePaperInkAndDayflowAccent() {
-    XCTAssertEqual(SledChrome.paperHex, "FAFAFA")
-    XCTAssertEqual(SledChrome.inkHex, "0A0A0A")
-    XCTAssertEqual(SledChrome.accentHex, "F96E00")
-
-    let light = SledChrome.palette(for: .light)
-    let dark = SledChrome.palette(for: .dark)
-    XCTAssertEqual(light.background, SledChrome.paper)
-    XCTAssertEqual(light.foreground, SledChrome.ink)
-    XCTAssertEqual(light.accent, SledChrome.accent)
-    XCTAssertEqual(dark.background, SledChrome.ink)
-    XCTAssertEqual(dark.foreground, SledChrome.paper)
-    XCTAssertEqual(dark.accent, SledChrome.accent)
+  func testShadcnThemeUsesNeutralWithPatchedSidebarPrimary() {
+    XCTAssertEqual(SledShadcnTheme.darkSidebarPrimaryOKLCH, "oklch(0.922 0 0)")
+    XCTAssertEqual(SledShadcnTheme.radiusPoints, 8)
+    XCTAssertEqual(SledTimelineCopy.empty, "No actions yet. Start recording from the menu bar.")
+    XCTAssertEqual(SledTimelineCopy.loading, "Building timeline…")
+    XCTAssertEqual(SledTimelineCopy.disabled, "Grant Screen Recording first")
+    XCTAssertEqual(SledTimelineCopy.noLocalModel, "No local model. Timeline still records.")
   }
 }

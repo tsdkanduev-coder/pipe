@@ -6,6 +6,10 @@ Derived from [Dayflow](https://github.com/JerryZLiu/Dayflow) (MIT). See `NOTICE`
 
 **macOS 14+.** Unsigned builds are OK. Not on the App Store.
 
+## Chrome
+
+SwiftUI uses [ShadKit](https://github.com/jasonkneen/ShadKit) product **ShadcnUI** only (MIT, macOS 14+, from 0.1.0). Theme is shadcn `neutralLight` / `neutralDark` with dark `--sidebar-primary` patched to `oklch(0.922 0 0)`. Radius 0.5rem. SF Pro. No AIElementsUI, CanvasUI, or React.
+
 ## First-run
 
 First launch is **one Sled screen**: Screen Recording permission, Start recording, and local LLM status (Ollama / LM Studio). There is no Dayflow intro video, referral, Pro sign-in, or Codex/Claude CLI gate. Continue writes local routing and marks onboarding complete. Capture can start without a model.
@@ -123,6 +127,7 @@ Do not invent a `.dmg` on Linux. A GitHub Release with a binary is published onl
 | Check | How |
 | --- | --- |
 | First-run | One Sled screen (permission + start + local LLM). No Pro / CLI / intro video |
+| Chrome | ShadKit ShadcnUI, NavigationSplitView days + timeline, Settings Local only |
 | Recording status | Menu / Settings show `on` or `off` |
 | Stop | Stop recording; `sled.sqlite` rows remain |
 | SQLite path | `ls ~/Library/Application\ Support/Sled/sled.sqlite` |

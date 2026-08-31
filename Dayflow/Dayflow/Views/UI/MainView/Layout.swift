@@ -1,5 +1,6 @@
 import AppKit
 import Sentry
+import ShadcnUI
 import SwiftUI
 
 extension MainView {
@@ -117,7 +118,7 @@ extension MainView {
       TimelineFailureToastView(
         title: payload.title,
         message: payload.message,
-        actionTitle: payload.destination == .account ? "Open Account" : "Open Provider Settings",
+        actionTitle: "Retry",
         onOpenSettings: { handleTimelineFailureToastOpenSettings(payload) },
         onDismiss: { handleTimelineFailureToastDismiss(payload) }
       )
@@ -419,72 +420,19 @@ private struct TimelineFailureToastView: View {
   let actionTitle: String
   let onOpenSettings: () -> Void
   let onDismiss: () -> Void
-  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .top, spacing: 10) {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(.system(size: 14))
-          .foregroundStyle(chrome.accent)
-          .padding(.top, 2)
-
-        // Mirrors ScreenRecordingPermissionNoticeView: semibold title with a
-        // quieter body. Untitled (generic fallback) toasts keep the old look.
-        VStack(alignment: .leading, spacing: 3) {
-          if let title {
-            Text(title)
-              .font(.custom("Figtree", size: 13))
-              .fontWeight(.semibold)
-              .foregroundStyle(chrome.foreground)
-          }
-
-          Text(message)
-            .font(.custom("Figtree", size: title == nil ? 13 : 12))
-            .foregroundStyle(chrome.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-
-        Button(action: onDismiss) {
-          Image(systemName: "xmark")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(chrome.secondary)
-            .frame(width: 18, height: 18)
-        }
-        .buttonStyle(.plain)
-        .hoverScaleEffect(scale: 1.02)
-        .pointingHandCursorOnHover(reassertOnPressEnd: true)
+    VStack(alignment: .leading, spacing: Space.x3) {
+      ShadcnAlert(variant: .destructive, systemImage: "exclamationmark.triangle.fill") {
+        ShadcnAlertTitle(title ?? "Timeline error")
+        ShadcnAlertDescription(message)
       }
-
-      DayflowSurfaceButton(
-        action: onOpenSettings,
-        content: {
-          HStack(spacing: 6) {
-            Image(systemName: "gearshape")
-              .font(.system(size: 12))
-            Text(actionTitle)
-              .font(.custom("Figtree", size: 12))
-              .fontWeight(.semibold)
-          }
-        },
-        background: chrome.accent,
-        foreground: chrome.onAccent,
-        borderColor: .clear,
-        cornerRadius: 8,
-        horizontalPadding: 14,
-        verticalPadding: 8,
-        showOverlayStroke: true
-      )
+      HStack(spacing: Space.x2) {
+        ShadcnButton(actionTitle, variant: .primary, action: onOpenSettings)
+        ShadcnButton("Dismiss", variant: .ghost, action: onDismiss)
+      }
     }
-    .padding(14)
     .frame(width: 360, alignment: .leading)
-    .background(chrome.background)
-    .cornerRadius(12)
-    .overlay(
-      RoundedRectangle(cornerRadius: 12)
-        .stroke(chrome.hairline, lineWidth: 1)
-    )
-    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
   }
 }
 

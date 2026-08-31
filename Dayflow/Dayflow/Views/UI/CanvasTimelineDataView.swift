@@ -508,7 +508,7 @@ struct CanvasTimelineDataView: View {
 
   private var recordingStatusGradient: LinearGradient {
     LinearGradient(
-      colors: [chrome.accent.opacity(0.18), chrome.surface],
+      colors: [chrome.surface, chrome.surface],
       startPoint: .leading,
       endPoint: .trailing
     )
@@ -516,7 +516,7 @@ struct CanvasTimelineDataView: View {
 
   private var pausedStatusGradient: LinearGradient {
     LinearGradient(
-      colors: [chrome.surface, chrome.background],
+      colors: [chrome.surface, chrome.surface],
       startPoint: .leading,
       endPoint: .trailing
     )
@@ -528,7 +528,7 @@ struct CanvasTimelineDataView: View {
         config: timelineSpinnerConfig,
         visualScale: 0.5
       )
-      Text("Generating your next card")
+      Text(SledTimelineCopy.loading)
     }
     .font(SledChrome.TypeRamp.body)
     .lineSpacing(2.4)
