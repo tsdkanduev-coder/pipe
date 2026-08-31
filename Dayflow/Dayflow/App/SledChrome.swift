@@ -5,8 +5,8 @@ import SwiftUI
 enum SledChrome {
   static let paperHex = "FAFAFA"
   static let inkHex = "0A0A0A"
-  /// Dayflow interactive accent (`#F96E00`). Not a new brand hue.
-  static let accentHex = "F96E00"
+  /// Achromatic accent (ShadKit primary). Recording uses destructive, not this.
+  static let accentHex = "0A0A0A"
 
   static let paper = Color(hex: paperHex)
   static let ink = Color(hex: inkHex)

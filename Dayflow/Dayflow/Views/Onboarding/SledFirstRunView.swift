@@ -5,6 +5,12 @@ import SwiftUI
 
 /// Completes first-run without Pro, CLI, referral, or cloud sign-in.
 enum SledFirstRun {
+  static let quitForPermissionCopy = "Sled will quit so the permission can apply."
+
+  static func canContinue(hasPermission: Bool) -> Bool {
+    hasPermission
+  }
+
   static func complete(defaults: UserDefaults = .standard) {
     try? LLMProviderRoutingStore.save(SledLocalLLMPolicy.lockedRouting, to: defaults)
     defaults.set(OnboardingStep.completion.rawValue, forKey: "onboardingStep")
@@ -22,6 +28,7 @@ struct SledFirstRunView: View {
 
   @State private var hasPermission = false
   @State private var localRuntime = LocalLLMRuntimeStatus.offline
+  @State private var isQuittingForPermission = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: Space.x5) {
@@ -36,6 +43,7 @@ struct SledFirstRunView: View {
       Spacer(minLength: Space.x2)
 
       ShadcnButton("Continue", variant: .primary, fillsWidth: true, action: finishFirstRun)
+        .disabled(!SledFirstRun.canContinue(hasPermission: hasPermission) || isQuittingForPermission)
     }
     .padding(Space.x8)
     .frame(minWidth: 480, minHeight: 420)
@@ -58,15 +66,21 @@ struct SledFirstRunView: View {
       ContentUnavailableView {
         Label("Screen Recording is off", systemImage: "record.circle")
       } description: {
-        Text("Sled needs Screen Recording before capture can start.")
-      } actions: {
-        ShadcnButton(
-          "Open System Settings",
-          systemImage: "gearshape",
-          variant: .primary,
-          action: requestPermission
+        Text(
+          isQuittingForPermission
+            ? SledFirstRun.quitForPermissionCopy
+            : "Sled needs Screen Recording before capture can start."
         )
-        ShadcnButton("Quit", variant: .outline, action: quitApp)
+      } actions: {
+        if !isQuittingForPermission {
+          ShadcnButton(
+            "Open System Settings",
+            systemImage: "gearshape",
+            variant: .primary,
+            action: requestPermission
+          )
+          ShadcnButton("Quit", variant: .outline, action: quitApp)
+        }
       }
     }
   }
@@ -124,13 +138,16 @@ struct SledFirstRunView: View {
       hasPermission = true
       return
     }
+    isQuittingForPermission = true
     CGRequestScreenCaptureAccess()
     if let url = URL(
       string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
     ) {
       NSWorkspace.shared.open(url)
     }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+    // Copy is on screen first. Real quit (not soft-hide) so TCC can apply.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+      AppDelegate.allowTermination = true
       NSApplication.shared.terminate(nil)
     }
   }

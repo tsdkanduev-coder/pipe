@@ -123,9 +123,19 @@ final class SledAcceptanceTests: XCTestCase {
     }
   }
 
+  func testContinueRequiresScreenRecordingPermission() {
+    XCTAssertFalse(SledFirstRun.canContinue(hasPermission: false))
+    XCTAssertTrue(SledFirstRun.canContinue(hasPermission: true))
+    XCTAssertEqual(
+      SledFirstRun.quitForPermissionCopy,
+      "Sled will quit so the permission can apply."
+    )
+  }
+
   func testShadcnThemeUsesNeutralWithPatchedSidebarPrimary() {
     XCTAssertEqual(SledShadcnTheme.darkSidebarPrimaryOKLCH, "oklch(0.922 0 0)")
     XCTAssertEqual(SledShadcnTheme.radiusPoints, 8)
+    XCTAssertNotEqual(SledChrome.accentHex, "F96E00")
     XCTAssertEqual(SledTimelineCopy.empty, "No actions yet. Start recording from the menu bar.")
     XCTAssertEqual(SledTimelineCopy.loading, "Building timeline…")
     XCTAssertEqual(SledTimelineCopy.disabled, "Grant Screen Recording first")
