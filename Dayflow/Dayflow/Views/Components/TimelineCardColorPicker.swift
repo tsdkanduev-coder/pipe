@@ -198,7 +198,7 @@ struct ColorOrganizerRoot: View {
         instructionRow(
           icon: "CategoriesTextSelect",
           text:
-            "Try to provide as much details in the descriptions as you can to help Dayflow understand your workflow and habits."
+            "Try to provide as much details in the descriptions as you can to help Sled understand your workflow and habits."
         )
         .frame(maxWidth: isCompact ? .infinity : 280, alignment: .leading)
       }

@@ -16,6 +16,7 @@ struct ActivityCard: View {
   @EnvironmentObject private var appState: AppState
   @EnvironmentObject private var categoryStore: CategoryStore
   @EnvironmentObject private var retryCoordinator: RetryCoordinator
+  @Environment(\.sledChrome) private var chrome
   @AppStorage(TimelapsePreferences.saveAllTimelapsesToDiskKey) private var saveAllTimelapsesToDisk =
     false
 
@@ -116,18 +117,18 @@ struct ActivityCard: View {
           Text("Select an activity to view details")
             .font(.custom("Figtree", size: 15))
             .fontWeight(.regular)
-            .foregroundColor(.gray.opacity(0.5))
+            .foregroundStyle(chrome.secondary)
         } else {
           if appState.isRecording {
             VStack(spacing: 6) {
               Text("No cards yet")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundStyle(chrome.foreground)
               Text(
-                "Cards are generated about every 15 minutes. If Dayflow is on and no cards show up within 30 minutes, please report a bug."
+                "Cards are generated about every 15 minutes. If Sled is recording and no cards show up within 30 minutes, please report a bug."
               )
               .font(.custom("Figtree", size: 13))
-              .foregroundColor(.gray.opacity(0.6))
+              .foregroundStyle(chrome.secondary)
               .multilineTextAlignment(.center)
               .padding(.horizontal, 16)
             }
@@ -135,10 +136,10 @@ struct ActivityCard: View {
             VStack(spacing: 6) {
               Text("Recording is off")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundStyle(chrome.foreground)
               Text("Sled recording is currently turned off, so cards aren’t being produced.")
                 .font(.custom("Figtree", size: 13))
-                .foregroundColor(.gray.opacity(0.6))
+                .foregroundStyle(chrome.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
             }

@@ -6,30 +6,31 @@ struct StatusMenuView: View {
   let dismissMenu: () -> Void
   @ObservedObject private var appState = AppState.shared
   @ObservedObject private var pauseManager = PauseManager.shared
+  @Environment(\.sledChrome) private var chrome
 
   private var controlMode: RecordingControlMode {
     RecordingControl.currentMode(appState: appState, pauseManager: pauseManager)
   }
 
   var body: some View {
-    VStack(spacing: 6) {
+    VStack(spacing: SledChrome.Space.row) {
       Text(
         SledRecordingStatus.displayText(
           isRecording: controlMode == .active,
           permissionGranted: ScreenRecordingPermissionNotice.isGranted
         )
       )
-      .font(.system(size: 11, weight: .semibold))
-      .foregroundStyle(.secondary)
+      .font(SledChrome.TypeRamp.status)
+      .foregroundStyle(controlMode == .active ? chrome.accent : chrome.secondary)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, 5)
+      .padding(.horizontal, SledChrome.Space.tight)
 
       if !LocalLLMRuntimeStatus.current().isReady {
         Text(LocalLLMRuntimeStatus.offline.userMessage)
-          .font(.system(size: 11, weight: .medium))
-          .foregroundStyle(.secondary)
+          .font(SledChrome.TypeRamp.caption)
+          .foregroundStyle(chrome.secondary)
           .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.horizontal, 5)
+          .padding(.horizontal, SledChrome.Space.tight)
       }
 
       // Pause/Resume section
@@ -41,18 +42,22 @@ struct StatusMenuView: View {
 
       MenuDivider()
 
-      MenuRow(title: "Open Sled", assetImage: "DayflowLogo", action: openDayflow)
+      MenuRow(title: "Open Sled", action: openDayflow)
       MenuRow(title: "Open Recordings", action: openRecordingsFolder)
 
       MenuDivider()
 
       MenuRow(title: "Quit Completely", systemImage: "power", accent: .red, action: quitDayflow)
     }
-    .padding(.vertical, 9)
-    .padding(.horizontal, 9)
+    .padding(.vertical, SledChrome.Space.inset)
+    .padding(.horizontal, SledChrome.Space.inset)
     .frame(minWidth: 200, maxWidth: 210)
-    .background(.regularMaterial)
-    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    .background(chrome.background)
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .overlay(
+      RoundedRectangle(cornerRadius: 8, style: .continuous)
+        .stroke(chrome.hairline, lineWidth: 1)
+    )
   }
 
   private func pauseRecording(duration: PauseDuration) {
@@ -109,14 +114,14 @@ struct StatusMenuView: View {
 
 private struct PauseSection: View {
   let onPause: (PauseDuration) -> Void
+  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      // Header
+    VStack(alignment: .leading, spacing: SledChrome.Space.row) {
       Text("Pause Sled")
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 5)
+        .font(SledChrome.TypeRamp.body)
+        .foregroundStyle(chrome.secondary)
+        .padding(.horizontal, SledChrome.Space.tight)
 
       // Duration picker
       DurationPicker(onSelect: onPause)
@@ -136,6 +141,8 @@ private struct DurationPicker: View {
     ("∞", .indefinite),
   ]
 
+  @Environment(\.sledChrome) private var chrome
+
   var body: some View {
     HStack(spacing: 0) {
       ForEach(Array(options.enumerated()), id: \.offset) { index, option in
@@ -147,17 +154,17 @@ private struct DurationPicker: View {
         )
 
         if index < options.count - 1 {
-          Divider()
-            .frame(height: 16)
-            .opacity(0.3)
+          Rectangle()
+            .fill(chrome.hairline)
+            .frame(width: 1, height: 16)
         }
       }
     }
-    .background(Color.primary.opacity(0.06))
+    .background(chrome.surface)
     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
     .overlay(
       RoundedRectangle(cornerRadius: 6, style: .continuous)
-        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
+        .strokeBorder(chrome.hairline, lineWidth: 0.5)
     )
   }
 }
@@ -169,19 +176,20 @@ private struct DurationOption: View {
   let onTap: () -> Void
 
   @State private var isHovering = false
+  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
     Button(action: onTap) {
       Text(label)
-        .font(.system(size: 11, weight: .medium))
-        .foregroundStyle(isHovering ? .white : .primary)
-        .padding(.horizontal, 8)
+        .font(SledChrome.TypeRamp.caption)
+        .foregroundStyle(isHovering ? chrome.onAccent : chrome.foreground)
+        .padding(.horizontal, SledChrome.Space.stack)
         .padding(.vertical, 5)
         .background(
           Group {
             if isHovering {
               RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .fill(Color.accentColor)
+                .fill(chrome.accent)
             }
           }
         )
@@ -203,7 +211,7 @@ private struct PausedSection: View {
   @ObservedObject private var pauseManager = PauseManager.shared
 
   var body: some View {
-    VStack(spacing: 6) {
+    VStack(spacing: SledChrome.Space.row) {
       // Countdown badge (only shown for timed pause)
       if let timeString = pauseManager.remainingTimeFormatted {
         CountdownBadge(remainingTime: timeString)
@@ -213,7 +221,7 @@ private struct PausedSection: View {
       MenuRow(
         title: "Resume Sled",
         systemImage: "play.circle",
-        accent: .accentColor,
+        accent: SledChrome.accent,
         action: onResume
       )
     }
@@ -224,19 +232,20 @@ private struct PausedSection: View {
 
 private struct CountdownBadge: View {
   let remainingTime: String
+  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
     HStack(spacing: 0) {
       Text("Sled paused for ")
-        .font(.system(size: 11, weight: .medium))
+        .font(SledChrome.TypeRamp.caption)
       Text(remainingTime)
-        .font(.system(size: 11, weight: .bold).monospacedDigit())
+        .font(SledChrome.TypeRamp.status.monospacedDigit())
     }
-    .foregroundStyle(.white)
+    .foregroundStyle(chrome.onAccent)
     .padding(.horizontal, 12)
-    .padding(.vertical, 6)
+    .padding(.vertical, SledChrome.Space.row)
     .frame(maxWidth: .infinity)
-    .background(Color.accentColor)
+    .background(chrome.accent)
     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
   }
 }
@@ -252,6 +261,7 @@ private struct MenuRow: View {
   var action: () -> Void
 
   @State private var hovering = false
+  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
     Button(action: handleTap) {
@@ -273,18 +283,18 @@ private struct MenuRow: View {
         }
 
         Text(title)
-          .font(.system(size: 12, weight: .semibold))
-          .foregroundStyle(.primary)
+          .font(SledChrome.TypeRamp.body)
+          .foregroundStyle(chrome.foreground)
           .lineLimit(1)
 
         Spacer(minLength: 0)
       }
-      .padding(.vertical, 3.5)
-      .padding(.horizontal, 5)
-      .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+      .padding(.vertical, SledChrome.Space.tight)
+      .padding(.horizontal, SledChrome.Space.tight)
+      .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       .background(
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
-          .fill(hovering ? Color.primary.opacity(0.08) : Color.clear)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+          .fill(hovering ? chrome.surface : Color.clear)
       )
     }
     .buttonStyle(.plain)
@@ -300,11 +310,13 @@ private struct MenuRow: View {
 // MARK: - Menu Divider
 
 private struct MenuDivider: View {
+  @Environment(\.sledChrome) private var chrome
+
   var body: some View {
     Rectangle()
-      .fill(Color.primary.opacity(0.07))
-      .frame(height: 0.75)
-      .padding(.horizontal, 4)
+      .fill(chrome.hairline)
+      .frame(height: 1)
+      .padding(.horizontal, SledChrome.Space.tight)
       .padding(.vertical, 2)
   }
 }

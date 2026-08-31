@@ -6,6 +6,10 @@ Derived from [Dayflow](https://github.com/JerryZLiu/Dayflow) (MIT). See `NOTICE`
 
 **macOS 14+.** Unsigned builds are OK. Not on the App Store.
 
+## First-run
+
+First launch is **one Sled screen**: Screen Recording permission, Start recording, and local LLM status (Ollama / LM Studio). There is no Dayflow intro video, referral, Pro sign-in, or Codex/Claude CLI gate. Continue writes local routing and marks onboarding complete. Capture can start without a model.
+
 ## Permissions (S1)
 
 Sled needs **Screen & System Audio Recording**.
@@ -118,7 +122,7 @@ Do not invent a `.dmg` on Linux. A GitHub Release with a binary is published onl
 
 | Check | How |
 | --- | --- |
-| TCC | Grant Screen Recording; status must not stay on without permission |
+| First-run | One Sled screen (permission + start + local LLM). No Pro / CLI / intro video |
 | Recording status | Menu / Settings show `on` or `off` |
 | Stop | Stop recording; `sled.sqlite` rows remain |
 | SQLite path | `ls ~/Library/Application\ Support/Sled/sled.sqlite` |

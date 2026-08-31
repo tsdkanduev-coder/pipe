@@ -114,9 +114,9 @@ struct DayflowApp: App {
   @AppStorage("didOnboard") private var didOnboard = false
   @AppStorage("useBlankUI") private var useBlankUI = false
   @AppStorage("hasCompletedJournalOnboarding") private var hasCompletedJournalOnboarding = false
-  @State private var showVideoLaunch = true
-  @State private var contentOpacity = 0.0
-  @State private var contentScale = 0.98
+  @State private var showVideoLaunch = false
+  @State private var contentOpacity = 1.0
+  @State private var contentScale = 1.0
   @StateObject private var categoryStore = CategoryStore()
   @StateObject private var journalCoordinator = JournalCoordinator()
 
@@ -139,7 +139,7 @@ struct DayflowApp: App {
               .environmentObject(categoryStore)
               .environmentObject(updaterManager)
               .environmentObject(journalCoordinator)
-          } else if !showVideoLaunch {
+          } else {
             OnboardingFlow()
               .environmentObject(AppState.shared)
               .environmentObject(categoryStore)
@@ -207,7 +207,7 @@ struct DayflowApp: App {
               .resizable()
               .scaledToFill()
 
-            Color(red: 0.98, green: 0.96, blue: 0.93)
+            SledChrome.paper
               .opacity(0.4)
           }
           .ignoresSafeArea()

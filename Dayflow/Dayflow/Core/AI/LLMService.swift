@@ -427,19 +427,19 @@ final class LLMService: LLMServicing {
 
     if rateLimited && !backupConfigured {
       return
-        "Sled hit a rate limit and no backup provider is configured. Add a backup in Settings > Providers to avoid interruptions."
+        "Sled hit a local-model limit. Start or restart Ollama or LM Studio. There is no backup cloud provider."
     }
 
     switch operation {
     case .transcribing:
       return
-        "Sled couldn't transcribe this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't transcribe this batch. Install/start Ollama (or LM Studio). Capture still saved the raw rows."
     case .generatingCards:
       return
-        "Sled couldn't generate timeline cards for this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't generate timeline cards for this batch. Install/start Ollama (or LM Studio)."
     case .none:
       return
-        "Sled couldn't finish this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't finish this batch. Install/start Ollama (or LM Studio)."
     }
   }
 
@@ -456,8 +456,8 @@ final class LLMService: LLMServicing {
   ) {
     let content = classification.toastContent(fallbackProviderLabel: primaryProviderLabel)
 
-    // Non-actionable failures resolve on their own; the only reason to
-    // surface one is to pitch a backup provider, so skip when one exists.
+    // Non-actionable failures resolve on their own; skip if a local
+    // secondary is already configured.
     if content == nil && backupConfigured { return }
 
     guard shouldEmitTimelineFailureToast(kind: classification.kind) else { return }

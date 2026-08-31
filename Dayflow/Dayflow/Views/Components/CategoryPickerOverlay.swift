@@ -92,7 +92,7 @@ struct CategoryPickerOverlay: View {
     let linkURL = URL(string: "sled://category-editor")!
 
     var intro = AttributedString(
-      "To help Dayflow organize your activities more accurately, try adding more details to the descriptions in your categories "
+      "To help Sled organize your activities more accurately, try adding more details to the descriptions in your categories "
     )
     intro.font = baseFont
     intro.foregroundColor = baseColor

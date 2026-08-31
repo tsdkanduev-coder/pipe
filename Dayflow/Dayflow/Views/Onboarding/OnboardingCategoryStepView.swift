@@ -94,7 +94,7 @@ struct OnboardingCategoryStepView: View {
         .fixedSize(horizontal: false, vertical: true)
 
       Text(
-        "Here are options tailored to your work to help you get started. Provide more personalized descriptions to help Dayflow better understand your actions."
+        "Here are options tailored to your work to help you get started. Provide more personalized descriptions to help Sled better understand your actions."
       )
       .font(.custom("Figtree", size: 14).weight(.medium))
       .foregroundColor(Color(hex: "5B5B5B"))

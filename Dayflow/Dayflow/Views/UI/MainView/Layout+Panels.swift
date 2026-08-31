@@ -111,13 +111,13 @@ extension MainView {
   private var mainPanelBackground: some View {
     ZStack {
       RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(Color.white)
+        .fill(SledChrome.paper)
         .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 0)
       RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(Color.white)
+        .fill(SledChrome.paper)
         .blendMode(.destinationOut)
       RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .fill(.white.opacity(0.22))
+        .fill(SledChrome.paper.opacity(0.22))
     }
     .compositingGroup()
   }

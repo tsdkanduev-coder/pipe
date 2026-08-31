@@ -88,4 +88,53 @@ final class SledAcceptanceTests: XCTestCase {
     XCTAssertFalse(SledIdentity.productName.lowercased().contains("screenpipe"))
     XCTAssertFalse(SledIdentity.loopbackActionsURL.contains("dayflow"))
   }
+
+  func testFirstRunCompletionLocksLocalAndSkipsProCLI() throws {
+    let suiteName = "sled.first-run.\(UUID().uuidString)"
+    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+
+    SledFirstRun.complete(defaults: defaults)
+
+    XCTAssertTrue(defaults.bool(forKey: "didOnboard"))
+    XCTAssertTrue(
+      OnboardingStep.hasPassedScreenRecordingStep(
+        rawValue: defaults.integer(forKey: "onboardingStep")
+      )
+    )
+    let routing = try LLMProviderRoutingStore.load(from: defaults)
+    XCTAssertEqual(routing.primary, .local)
+    XCTAssertNil(routing.secondary)
+  }
+
+  func testTimelineFailureCopyDoesNotPitchProOrBackup() {
+    let kinds: [TimelineFailureKind] = [
+      .dayflowProRequired, .cliNotInstalled, .cliOutdated, .notConfigured,
+      .apiKeyProblem, .usageLimitHit, .outOfCredits,
+    ]
+    for kind in kinds {
+      let toast = TimelineFailureClassification(kind: kind, providerName: nil)
+        .toastContent(fallbackProviderLabel: "local")
+      let body = (toast?.body ?? "").lowercased()
+      XCTAssertFalse(body.contains("dayflow pro"), "\(kind.rawValue) still mentions Dayflow Pro")
+      XCTAssertFalse(body.contains("subscribe"), "\(kind.rawValue) still pitches subscribe")
+      XCTAssertFalse(body.contains("backup provider"), "\(kind.rawValue) still pitches backup provider")
+      XCTAssertFalse(body.contains("gemini"), "\(kind.rawValue) still pitches Gemini")
+    }
+  }
+
+  func testChromeTokensArePaperInkAndDayflowAccent() {
+    XCTAssertEqual(SledChrome.paperHex, "FAFAFA")
+    XCTAssertEqual(SledChrome.inkHex, "0A0A0A")
+    XCTAssertEqual(SledChrome.accentHex, "F96E00")
+
+    let light = SledChrome.palette(for: .light)
+    let dark = SledChrome.palette(for: .dark)
+    XCTAssertEqual(light.background, SledChrome.paper)
+    XCTAssertEqual(light.foreground, SledChrome.ink)
+    XCTAssertEqual(light.accent, SledChrome.accent)
+    XCTAssertEqual(dark.background, SledChrome.ink)
+    XCTAssertEqual(dark.foreground, SledChrome.paper)
+    XCTAssertEqual(dark.accent, SledChrome.accent)
+  }
 }
