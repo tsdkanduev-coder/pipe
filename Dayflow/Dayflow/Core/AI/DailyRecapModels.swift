@@ -19,15 +19,7 @@ enum DailyRecapProvider: String, Codable, CaseIterable, Sendable {
   ]
 
   static func load(from defaults: UserDefaults = .standard) -> DailyRecapProvider {
-    if let rawValue = defaults.string(forKey: storageKey),
-      let provider = DailyRecapProvider(rawValue: rawValue)
-    {
-      return provider
-    }
-
-    let provider = migrateInitialSelection(from: defaults)
-    provider.save(to: defaults)
-    return provider
+    .local
   }
 
   func save(to defaults: UserDefaults = .standard) {
@@ -66,7 +58,7 @@ enum DailyRecapProvider: String, Codable, CaseIterable, Sendable {
   var displayName: String {
     switch self {
     case .dayflow:
-      return "Dayflow backend"
+      return "Disabled"
     case .local:
       return "Local"
     case .gemini:
@@ -83,7 +75,7 @@ enum DailyRecapProvider: String, Codable, CaseIterable, Sendable {
   var selectionLabel: String {
     switch self {
     case .dayflow:
-      return "Dayflow backend"
+      return "Disabled"
     case .local:
       return "Local"
     case .gemini:
@@ -206,7 +198,7 @@ struct DailyStandupGenerationMetadata: Codable, Equatable, Sendable {
   var displayLabel: String {
     switch provider {
     case .dayflow:
-      return "Dayflow backend"
+      return "Disabled"
     case .local:
       return modelOrTool ?? "Local"
     case .gemini:

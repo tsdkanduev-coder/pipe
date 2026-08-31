@@ -136,7 +136,7 @@ struct ActivityCard: View {
               Text("Recording is off")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.7))
-              Text("Dayflow recording is currently turned off, so cards aren’t being produced.")
+              Text("Sled recording is currently turned off, so cards aren’t being produced.")
                 .font(.custom("Figtree", size: 13))
                 .foregroundColor(.gray.opacity(0.6))
                 .multilineTextAlignment(.center)

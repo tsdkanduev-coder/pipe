@@ -200,11 +200,11 @@ final class StorageManager: StorageManaging, @unchecked Sendable {
   init() {
     UserDefaultsMigrator.migrateIfNeeded()
     StoragePathMigrator.migrateIfNeeded()
+    SledStoragePaths.migrateDayflowStoreIfNeeded(fileManager: fileMgr)
 
-    let appSupport = fileMgr.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    let baseDir = appSupport.appendingPathComponent("Dayflow", isDirectory: true)
-    let recordingsDir = baseDir.appendingPathComponent("recordings", isDirectory: true)
-    let backupDir = baseDir.appendingPathComponent("backups", isDirectory: true)
+    let baseDir = SledStoragePaths.applicationSupportDirectory(fileManager: fileMgr)
+    let recordingsDir = SledStoragePaths.recordingsDirectory(fileManager: fileMgr)
+    let backupDir = SledStoragePaths.backupsDirectory(fileManager: fileMgr)
 
     // Ensure directories exist before opening database
     try? fileMgr.createDirectory(at: baseDir, withIntermediateDirectories: true)
@@ -213,12 +213,16 @@ final class StorageManager: StorageManaging, @unchecked Sendable {
 
     root = recordingsDir
     backupsDir = backupDir
-    dbURL = baseDir.appendingPathComponent("chunks.sqlite")
+    dbURL = SledStoragePaths.databaseURL(fileManager: fileMgr)
 
     StorageManager.migrateDatabaseLocationIfNeeded(
       fileManager: fileMgr,
       legacyRecordingsDir: recordingsDir,
       newDatabaseURL: dbURL
+    )
+    SledStoragePaths.renameLegacyDatabaseIfNeeded(
+      in: dbURL.deletingLastPathComponent(),
+      fileManager: fileMgr
     )
 
     // Configure database with WAL mode for better performance and safety
@@ -716,6 +720,14 @@ final class StorageManager: StorageManaging, @unchecked Sendable {
                 ALTER TABLE day_goals ADD COLUMN is_skipped INTEGER NOT NULL DEFAULT 0;
             """)
         print("✅ Added is_skipped column to day_goals")
+      }
+
+      let cards = try db.columns(in: "timeline_cards").map { $0.name }
+      if !cards.contains("app") {
+        try db.execute(sql: "ALTER TABLE timeline_cards ADD COLUMN app TEXT;")
+      }
+      if !cards.contains("window_title") {
+        try db.execute(sql: "ALTER TABLE timeline_cards ADD COLUMN window_title TEXT;")
       }
     }
   }

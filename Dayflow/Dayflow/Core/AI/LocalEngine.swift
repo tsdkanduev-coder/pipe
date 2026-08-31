@@ -17,9 +17,9 @@ enum LocalEngine: String, CaseIterable, Identifiable, Codable {
 
   var defaultBaseURL: String {
     switch self {
-    case .ollama: return "http://localhost:11434"
-    case .lmstudio: return "http://localhost:1234"
-    case .custom: return "http://localhost:11434"
+    case .ollama: return SledIdentity.ollamaBaseURL
+    case .lmstudio: return SledIdentity.lmStudioBaseURL
+    case .custom: return SledIdentity.ollamaBaseURL
     }
   }
 }

@@ -224,11 +224,7 @@ final class AnalyticsService {
 
   var isOptedIn: Bool {
     get {
-      if UserDefaults.standard.object(forKey: optInKey) == nil {
-        // Default ON per product decision
-        return true
-      }
-      return UserDefaults.standard.bool(forKey: optInKey)
+      false
     }
     set {
       UserDefaults.standard.set(newValue, forKey: optInKey)
@@ -236,6 +232,8 @@ final class AnalyticsService {
   }
 
   func start(apiKey: String, host: String) {
+    // Sled ships with no telemetry. Do not initialize PostHog.
+    return
     let config = PostHogConfig(apiKey: apiKey, host: host)
     let optedIn = isOptedIn
     // Disable autocapture for privacy

@@ -89,7 +89,7 @@ struct CategoryPickerOverlay: View {
     let baseFont = Font.custom("Figtree", size: 12)
     let baseColor = Color(red: 0.39, green: 0.35, blue: 0.33)
     let linkColor = Color(red: 1.0, green: 0.4, blue: 0.0)
-    let linkURL = URL(string: "dayflow://category-editor")!
+    let linkURL = URL(string: "sled://category-editor")!
 
     var intro = AttributedString(
       "To help Dayflow organize your activities more accurately, try adding more details to the descriptions in your categories "

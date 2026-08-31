@@ -551,14 +551,14 @@ struct CanvasTimelineDataView: View {
   private var pausedStatusText: some View {
     statusText(
       iconName: "pause.fill",
-      message: "Dayflow is paused. Click 'Resume' to generate new activity cards."
+      message: "Sled is paused. Click 'Resume' to generate new activity cards."
     )
   }
 
   private var stoppedStatusText: some View {
     statusText(
       iconName: "play.fill",
-      message: "Dayflow isn't recording. Click 'Resume' to generate new activity cards."
+      message: "Sled isn't recording. Click 'Resume' to generate new activity cards."
     )
   }
 

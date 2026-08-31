@@ -33,11 +33,7 @@ struct SettingsProvidersTabView: View {
 
       currentConfigurationSection
       connectionHealthSection
-      failoverRoutingSection
-
-      if viewModel.currentProvider == .gemini {
-        geminiModelSection
-      }
+      localRuntimeStatusSection
 
       primaryPromptCustomizationSection
       if viewModel.hasCodexOrClaudeProviderInRouting {
@@ -202,9 +198,30 @@ struct SettingsProvidersTabView: View {
             }
           }
         case .dayflow:
-          Text("Hosted cards and transcription run through your Dayflow account.")
+          Text("Hosted providers are disabled. Sled uses local models only.")
             .font(.custom("Figtree", size: 13))
             .foregroundColor(SettingsStyle.secondary)
+        }
+      }
+    }
+  }
+
+  private var localRuntimeStatusSection: some View {
+    let status = LocalLLMRuntimeStatus.current()
+    return SettingsSection(
+      title: "Local model",
+      subtitle: "Summaries stay on this Mac. No cloud fallback."
+    ) {
+      VStack(alignment: .leading, spacing: 0) {
+        SettingsRow(label: "Provider", showsDivider: true) {
+          Text("Local")
+            .font(.custom("Figtree", size: 13))
+        }
+        SettingsRow(label: "Status", showsDivider: false) {
+          SettingsStatusDot(
+            state: status.isReady ? .good : .bad,
+            label: status.userMessage
+          )
         }
       }
     }
@@ -343,7 +360,7 @@ struct SettingsProvidersTabView: View {
   private var geminiModelSection: some View {
     SettingsSection(
       title: "Gemini model preference",
-      subtitle: "Choose which Gemini model Dayflow should prioritize."
+      subtitle: "Gemini is disabled. Sled uses local models only."
     ) {
       VStack(alignment: .leading, spacing: 14) {
         Picker("Gemini model", selection: $viewModel.selectedGeminiModel) {
@@ -363,7 +380,7 @@ struct SettingsProvidersTabView: View {
           .foregroundColor(SettingsStyle.secondary)
 
         Text(
-          "Dayflow automatically downgrades if your chosen model is rate limited or unavailable."
+          "Sled does not fall back to a cloud model."
         )
         .font(.custom("Figtree", size: 11))
         .foregroundColor(SettingsStyle.meta)
@@ -379,7 +396,7 @@ struct SettingsProvidersTabView: View {
     case .gemini:
       promptSection(
         title: "Gemini prompt customization",
-        subtitle: "Override Dayflow's defaults to tailor card generation.",
+        subtitle: "Override Sled's defaults to tailor card generation.",
         intro:
           "Overrides apply only when their toggle is on. Unchecked sections fall back to Dayflow's defaults.",
         sections: [
@@ -535,7 +552,7 @@ struct SettingsProvidersTabView: View {
         HStack {
           Spacer()
           SettingsSecondaryButton(
-            title: "Reset to Dayflow defaults",
+            title: "Reset to Sled defaults",
             systemImage: "arrow.counterclockwise",
             action: onReset
           )
@@ -737,7 +754,7 @@ struct LocalModelUpgradeSheet: View {
               .font(.custom("Figtree", size: 22))
               .fontWeight(.semibold)
             Text(
-              "Follow the steps below, run a quick test, and Dayflow will switch you over automatically."
+              "Follow the steps below, run a quick test, and Sled will switch you over automatically."
             )
             .font(.custom("Figtree", size: 13))
             .foregroundColor(SettingsStyle.secondary)

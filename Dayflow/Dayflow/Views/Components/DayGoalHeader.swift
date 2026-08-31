@@ -108,7 +108,7 @@ struct DayGoalHeader: View {
     case .active:
       return "Tracking progress from your focus and distraction categories."
     case .pausedTimed, .pausedIndefinite:
-      return "Dayflow is paused. Resume to continue tracking your progress."
+      return "Sled is paused. Resume to continue tracking your progress."
     case .stopped:
       return "Start Dayflow to continue tracking your progress."
     }

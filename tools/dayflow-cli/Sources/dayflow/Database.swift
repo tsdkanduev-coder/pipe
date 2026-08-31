@@ -51,12 +51,14 @@ final class Database {
 
   /// Dayflow's database location. Overridable via DAYFLOW_DB for tests.
   static func defaultPath() -> String {
-    if let override = ProcessInfo.processInfo.environment["DAYFLOW_DB"] {
+    if let override = ProcessInfo.processInfo.environment["SLED_DB"]
+      ?? ProcessInfo.processInfo.environment["DAYFLOW_DB"]
+    {
       return override
     }
     let appSupport = FileManager.default.urls(
       for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    return appSupport.appendingPathComponent("Dayflow/chunks.sqlite").path
+    return appSupport.appendingPathComponent("Sled/sled.sqlite").path
   }
 
   init(path: String) throws {

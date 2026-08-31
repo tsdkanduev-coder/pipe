@@ -47,16 +47,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     AppDelegate.allowTermination = false
     applySavedDockIconPreference()
 
-    // Configure crash reporting (Sentry) from shared telemetry preference.
-    SentryHelper.setEnabled(AnalyticsService.shared.isOptedIn)
-
-    // Configure analytics (prod only; default opt-in ON)
-    let info = Bundle.main.infoDictionary
-    let POSTHOG_API_KEY = info?["PHPostHogApiKey"] as? String ?? ""
-    let POSTHOG_HOST = info?["PHPostHogHost"] as? String ?? "https://us.i.posthog.com"
-    if !POSTHOG_API_KEY.isEmpty {
-      AnalyticsService.shared.start(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
-    }
+    // Sled: no telemetry. Crash reporting and PostHog stay off.
+    SentryHelper.setEnabled(false)
 
     // App opened (cold start)
     AnalyticsService.shared.capture("app_opened", ["cold_start": true])
@@ -110,9 +102,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               persistPreference: false
             )
           }
-          if didOnboard {
-            ScreenRecordingPermissionNotice.post(reason: "launch_preflight_missing")
-          }
+          ScreenRecordingPermissionNotice.post(reason: "launch_preflight_missing")
           self.flushPendingDeepLinks()
           return
         }
@@ -138,10 +128,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               persistPreference: false
             )
           }
-          if didOnboard {
-            ScreenRecordingPermissionNotice.post(reason: "launch_shareable_content_failed")
-          }
-          print("Screen recording permission not granted, skipping auto-start")
+          ScreenRecordingPermissionNotice.post(reason: "launch_shareable_content_failed")
+          print("Screen recording permission not granted; recording stays off")
         }
         self.flushPendingDeepLinks()
       }
@@ -151,6 +139,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       AppState.shared.isRecording = false
       flushPendingDeepLinks()
     }
+
+    LoopbackAPIServer.shared.start()
 
     // Start the provider-routed analysis background job
     setupTimelineAnalysis()

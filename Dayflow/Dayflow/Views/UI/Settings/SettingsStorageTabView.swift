@@ -41,11 +41,11 @@ struct SettingsStorageTabView: View {
     let isRecording = permissionGranted && recordingEnabled
     let recorderStatus: SettingsStatusDot.State =
       isRecording ? .good : (permissionGranted ? .idle : .bad)
-    let recorderLabel = isRecording ? "Active" : (permissionGranted ? "Idle" : "Blocked")
+    let recorderLabel = SledRecordingStatus.label(isRecording: isRecording)
 
     return SettingsSection(
       title: "Recording status",
-      subtitle: "Ensure Dayflow can capture your screen."
+      subtitle: "Ensure Sled can capture your screen."
     ) {
       VStack(alignment: .leading, spacing: 0) {
         SettingsRow(label: "Screen recording permission") {

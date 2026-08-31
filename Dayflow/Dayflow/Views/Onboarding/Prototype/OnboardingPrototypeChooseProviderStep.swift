@@ -63,58 +63,18 @@ struct OnboardingPrototypeChooseProviderStep: View {
 
   private static let providers: [ComparisonProvider] = [
     ComparisonProvider(
-      providerID: .dayflow,
-      title: "Dayflow Pro",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "7 day free trial",
-      ease: RatedValue(text: "Sign in and go", rating: .best),
-      notes: "Sync across devices"
-    ),
-    ComparisonProvider(
-      providerID: .chatGPT,
-      title: "ChatGPT",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "ChatGPT paid subscription",
-      ease: RatedValue(text: "Install Codex CLI", rating: .medium),
-      notes: "Uses your ChatGPT subscription and less than 1% of your daily limit."
-    ),
-    ComparisonProvider(
-      providerID: .claude,
-      title: "Claude",
-      accuracy: RatedValue(text: "Best", rating: .best),
-      subscription: "Claude paid subscription",
-      ease: RatedValue(text: "Install Claude CLI", rating: .medium),
-      notes: "Uses your Claude subscription and less than 1% of your daily limit."
-    ),
-    ComparisonProvider(
-      providerID: .gemini,
-      title: "Gemini",
-      accuracy: RatedValue(text: "Medium", rating: .medium),
-      subscription: "Free",
-      ease: RatedValue(text: "API key", rating: .medium),
-      notes: "Uses Gemini free tier."
-    ),
-    ComparisonProvider(
-      providerID: .openAICompatible,
-      title: "OpenRouter / Custom",
-      accuracy: RatedValue(text: "Varies", rating: .medium),
-      subscription: "API credits",
-      ease: RatedValue(text: "API key and model", rating: .medium),
-      notes: "Uses OpenRouter or any OpenAI-compatible endpoint."
-    ),
-    ComparisonProvider(
       providerID: .local,
-      title: "Local AI",
-      accuracy: RatedValue(text: "Decent", rating: .basic),
+      title: "Local",
+      accuracy: RatedValue(text: "On-device", rating: .best),
       subscription: "Free",
-      ease: RatedValue(text: "Extensive setup", rating: .basic),
-      notes: "Requires 16GB+ RAM, 4GB free disk space, M1 or later chip preferred"
+      ease: RatedValue(text: "Ollama or LM Studio", rating: .medium),
+      notes: "Ollama 127.0.0.1:11434 or LM Studio 127.0.0.1:1234. Default vision model llama3.2-vision if already present. Sled does not re-pull."
     ),
   ]
 
   var body: some View {
     VStack(spacing: 0) {
-      Text("Choose a way to run Dayflow")
+      Text("Choose a way to run Sled")
         .font(.custom("InstrumentSerif-Regular", size: 40))
         .tracking(-1.2)
         .multilineTextAlignment(.center)

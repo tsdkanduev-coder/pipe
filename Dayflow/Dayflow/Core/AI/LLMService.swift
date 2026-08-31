@@ -125,34 +125,19 @@ final class LLMService: LLMServicing {
   }
 
   private func makeGeminiProvider() -> GeminiDirectProvider? {
-    if let apiKey = KeychainManager.shared.retrieve(for: "gemini"), !apiKey.isEmpty {
-      let preference = GeminiModelPreference.load()
-      return GeminiDirectProvider(apiKey: apiKey, preference: preference)
-    } else {
-      print("❌ [LLMService] Failed to retrieve Gemini API key from Keychain")
-      return nil
-    }
+    // S6c: cloud providers are dead-coded and cannot be called.
+    print("❌ [LLMService] Gemini is disabled. Sled uses local models only.")
+    return nil
   }
 
   private func makeGemmaBackupProvider() -> GemmaBackupProvider? {
-    if let apiKey = KeychainManager.shared.retrieve(for: "gemini"), !apiKey.isEmpty {
-      return GemmaBackupProvider(apiKey: apiKey)
-    }
-    print("❌ [LLMService] Failed to retrieve Gemini API key for Gemma fallback")
+    print("❌ [LLMService] Gemma cloud fallback is disabled.")
     return nil
   }
 
   private func makeDayflowProvider(endpoint: String) -> DayflowBackendProvider? {
-    let token = DayflowAuthManager.storedSessionToken()?
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let token, !token.isEmpty else {
-      print("❌ [LLMService] Dayflow provider unavailable: missing session token")
-      return nil
-    }
-    print(
-      "🔐 [LLMService] Dayflow provider ready endpoint=\(endpoint) token_length=\(token.count)"
-    )
-    return DayflowBackendProvider(token: token, endpoint: endpoint)
+    print("❌ [LLMService] Hosted backend is disabled. Sled uses local models only.")
+    return nil
   }
 
   private func resolvedDayflowEndpoint(savedEndpoint: String?) -> String? {
@@ -164,23 +149,16 @@ final class LLMService: LLMServicing {
   }
 
   private func localProviderEndpoint() -> String {
-    let saved =
-      UserDefaults.standard.string(forKey: "llmLocalBaseURL")?
-      .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-    return saved.isEmpty ? "http://localhost:11434" : saved
+    let engine = LocalLLMRuntimeStatus.currentEngine()
+    return SledLocalLLMPolicy.resolvedEndpoint(
+      engine: engine,
+      storedBaseURL: UserDefaults.standard.string(forKey: "llmLocalBaseURL")
+    )
   }
 
   private func makeOpenAICompatibleProvider() -> OllamaProvider? {
-    guard let configuration = OpenAICompatiblePreferences.load(), configuration.isComplete else {
-      print("❌ [LLMService] OpenAI-compatible provider unavailable: incomplete configuration")
-      return nil
-    }
-    let apiKey = KeychainManager.shared.retrieve(for: OpenAICompatiblePreferences.keychainProvider)
-    let runtimeConfiguration = OpenAICompatibleRuntimeConfiguration(
-      configuration: configuration,
-      bearerToken: apiKey
-    )
-    return OllamaProvider(openAICompatible: runtimeConfiguration)
+    print("❌ [LLMService] OpenAI-compatible cloud endpoints are disabled.")
+    return nil
   }
 
   private func providerLabel(for providerID: LLMProviderID) -> String {
@@ -192,7 +170,8 @@ final class LLMService: LLMServicing {
       domain: "LLMService",
       code: 1,
       userInfo: [
-        NSLocalizedDescriptionKey: "No LLM provider configured. Please configure in settings."
+        NSLocalizedDescriptionKey:
+          "Install/start Ollama (or LM Studio). Sled does not use cloud models."
       ]
     )
   }
@@ -200,6 +179,7 @@ final class LLMService: LLMServicing {
   private func makeBatchProvider(for providerID: LLMProviderID) throws -> (
     actions: BatchProviderActions, fallbackState: GemmaFallbackState?
   ) {
+    try SledLocalLLMPolicy.rejectCloudProvider(providerID)
     switch providerID {
     case .gemini:
       guard let provider = makeGeminiProvider() else { throw noProviderError() }
@@ -309,8 +289,8 @@ final class LLMService: LLMServicing {
     primaryProviderID: LLMProviderID,
     routing: LLMProviderRouting
   ) -> LLMProviderID? {
-    guard let secondary = routing.secondary, secondary != primaryProviderID else { return nil }
-    return secondary
+    // S6: no cloud fallback, including configured secondary providers.
+    return nil
   }
 
   private final class GemmaFallbackState {
@@ -447,19 +427,19 @@ final class LLMService: LLMServicing {
 
     if rateLimited && !backupConfigured {
       return
-        "Dayflow hit a rate limit and no backup provider is configured. Add a backup in Settings > Providers to avoid interruptions."
+        "Sled hit a rate limit and no backup provider is configured. Add a backup in Settings > Providers to avoid interruptions."
     }
 
     switch operation {
     case .transcribing:
       return
-        "Dayflow couldn't transcribe this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't transcribe this batch. Check Settings > Providers and configure a backup provider."
     case .generatingCards:
       return
-        "Dayflow couldn't generate timeline cards for this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't generate timeline cards for this batch. Check Settings > Providers and configure a backup provider."
     case .none:
       return
-        "Dayflow couldn't finish this batch. Check Settings > Providers and configure a backup provider."
+        "Sled couldn't finish this batch. Check Settings > Providers and configure a backup provider."
     }
   }
 
@@ -526,7 +506,8 @@ final class LLMService: LLMServicing {
   }
 
   private func makeTextProvider() throws -> TextProviderActions {
-    let providerID = try LLMProviderRoutingStore.load().primary
+    let providerID = SledLocalLLMPolicy.lockedRouting.primary
+    try SledLocalLLMPolicy.rejectCloudProvider(providerID)
     switch providerID {
     case .gemini:
       guard let provider = makeGeminiProvider() else { throw noProviderError() }
@@ -678,10 +659,9 @@ final class LLMService: LLMServicing {
       let (_, batchStartTs, batchEndTs, _) = batchInfo
       let routing: LLMProviderRouting
       do {
-        routing = try LLMProviderRoutingStore.load()
+        routing = SledLocalLLMPolicy.enforce(try LLMProviderRoutingStore.load())
       } catch {
-        completion(.failure(error))
-        return
+        routing = SledLocalLLMPolicy.lockedRouting
       }
       let processingStartTime = Date()
       let primaryProviderID = routing.primary
@@ -1274,36 +1254,10 @@ final class LLMService: LLMServicing {
   func generateChatStreaming(request: DashboardChatRequest) -> AsyncThrowingStream<
     ChatStreamEvent, Error
   > {
-    switch request.provider {
-    case .gemini:
-      guard let gemini = makeGeminiProvider() else {
-        return AsyncThrowingStream { continuation in
-          continuation.yield(
-            .error("Gemini is not configured. Add your Gemini API key in Settings > Providers."))
-          continuation.finish(
-            throwing: NSError(
-              domain: "LLMService",
-              code: 1101,
-              userInfo: [
-                NSLocalizedDescriptionKey:
-                  "Gemini is not configured. Add your Gemini API key in Settings > Providers."
-              ]))
-        }
-      }
-      return gemini.generateDashboardChatStreaming(
-        systemInstruction: request.systemInstruction ?? "",
-        history: request.history
-      )
-    case .codex:
-      return CodexProvider().generateChatStreaming(
-        prompt: request.prompt,
-        sessionId: request.sessionId
-      )
-    case .claude:
-      return ClaudeProvider().generateChatStreaming(
-        prompt: request.prompt,
-        sessionId: request.sessionId
-      )
+    let rejected = SledLocalLLMPolicy.cloudRejectedError()
+    return AsyncThrowingStream { continuation in
+      continuation.yield(.error(rejected.localizedDescription))
+      continuation.finish(throwing: rejected)
     }
   }
 }

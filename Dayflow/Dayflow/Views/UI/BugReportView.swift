@@ -14,7 +14,7 @@ struct BugReportView: View {
   var body: some View {
     VStack(spacing: 36) {
       VStack(spacing: 16) {
-        Text("Thanks for using Dayflow")
+        Text("Thanks for using Sled")
           .font(.custom("InstrumentSerif-Regular", size: 40))
           .foregroundColor(.black.opacity(0.9))
 
@@ -165,7 +165,7 @@ struct BugReportView: View {
     components.scheme = "mailto"
     components.path = emailAddress
     components.queryItems = [
-      URLQueryItem(name: "subject", value: "Dayflow feedback")
+      URLQueryItem(name: "subject", value: "Sled feedback")
     ]
 
     guard let url = components.url else { return }

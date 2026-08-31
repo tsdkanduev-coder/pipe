@@ -34,7 +34,7 @@ enum ChatPromptBuilder {
     let currentTime = chatServiceTimeFormatter.string(from: now)
 
     // Use full path (~ doesn't expand in sqlite3)
-    let dbPath = NSHomeDirectory() + "/Library/Application Support/Dayflow/chunks.sqlite"
+    let dbPath = StorageManager.shared.dbURL.path
 
     let languageSection = languageOverrideSection()
     let metadataSection = metadataContractSection()
@@ -212,7 +212,7 @@ enum ChatPromptBuilder {
     let currentTime = chatServiceTimeFormatter.string(from: now)
 
     // Use full path (~ doesn't expand in sqlite3)
-    let dbPath = NSHomeDirectory() + "/Library/Application Support/Dayflow/chunks.sqlite"
+    let dbPath = StorageManager.shared.dbURL.path
 
     let languageSection = languageOverrideSection()
     let metadataSection = metadataContractSection()

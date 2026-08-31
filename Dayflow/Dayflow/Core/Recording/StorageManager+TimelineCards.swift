@@ -109,17 +109,20 @@ extension StorageManager {
         sql: """
               INSERT INTO timeline_cards(
                   batch_id, start, end, start_ts, end_ts, day, title,
-                  summary, category, subcategory, detailed_summary, metadata
+                  summary, category, subcategory, detailed_summary, metadata,
+                  app, window_title
                   -- video_summary_url is omitted here
               )
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           """,
         arguments: [
           batchId, card.startTimestamp, card.endTimestamp, startTs, endTs, dayString, card.title,
           card.summary, card.category, card.subcategory, card.detailedSummary, metadataString,
+          card.appSites?.primary, card.title,
         ])
       lastId = db.lastInsertedRowID
     }
+    softDeleteOverlappingRawActivities(startTs: startTs, endTs: endTs)
     return lastId
   }
 

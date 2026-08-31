@@ -60,7 +60,7 @@ struct TimelineFailureClassification {
     switch kind {
     case .dayflowProRequired:
       return TimelineFailureToastContent(
-        title: "Dayflow Pro required",
+        title: "Local model required",
         body:
           "Timeline generation is paused for this account. Subscribe, or refer a friend and earn a free month of Pro. Your recordings are safe — use Retry on the failed cards once you're back.",
         destination: .account
@@ -85,10 +85,10 @@ struct TimelineFailureClassification {
       let body: String
       if let command = reauthCommand(for: provider) {
         body =
-          "Dayflow talks to \(provider) through its CLI but couldn't find it. Reinstall it and run '\(command)' in Terminal, or switch providers in settings."
+          "Sled talks to \(provider) through its CLI but couldn't find it. Reinstall it and run '\(command)' in Terminal, or switch providers in settings."
       } else {
         body =
-          "Dayflow couldn't find the command-line tool for \(provider). Reinstall it, or switch providers in settings."
+          "Sled couldn't find the command-line tool for \(provider). Reinstall it, or switch providers in settings."
       }
       return TimelineFailureToastContent(
         title: "\(provider)'s command-line tool is missing",
@@ -108,7 +108,7 @@ struct TimelineFailureClassification {
       return TimelineFailureToastContent(
         title: "Can't reach Ollama / LM Studio",
         body:
-          "Make sure it's running — Dayflow resumes with the next batch. Prefer zero setup? Gemini is free in provider settings.",
+          "Install/start Ollama (or LM Studio). Capture and the raw timeline still work. There is no cloud fallback.",
         destination: .providers
       )
 
@@ -164,7 +164,7 @@ struct TimelineFailureClassification {
       return TimelineFailureToastContent(
         title: "Your selected model isn't available",
         body:
-          "The model Dayflow tried to use isn't available on \(provider). Check the model selection in provider settings, or switch providers.",
+          "The model Sled tried to use isn't available on \(provider). Check the model selection in provider settings, or switch providers.",
         destination: .providers
       )
 

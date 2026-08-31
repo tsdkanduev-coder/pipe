@@ -6,7 +6,6 @@ struct StatusMenuView: View {
   let dismissMenu: () -> Void
   @ObservedObject private var appState = AppState.shared
   @ObservedObject private var pauseManager = PauseManager.shared
-  private let updaterManager = UpdaterManager.shared
 
   private var controlMode: RecordingControlMode {
     RecordingControl.currentMode(appState: appState, pauseManager: pauseManager)
@@ -14,6 +13,25 @@ struct StatusMenuView: View {
 
   var body: some View {
     VStack(spacing: 6) {
+      Text(
+        SledRecordingStatus.displayText(
+          isRecording: controlMode == .active,
+          permissionGranted: ScreenRecordingPermissionNotice.isGranted
+        )
+      )
+      .font(.system(size: 11, weight: .semibold))
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal, 5)
+
+      if !LocalLLMRuntimeStatus.current().isReady {
+        Text(LocalLLMRuntimeStatus.offline.userMessage)
+          .font(.system(size: 11, weight: .medium))
+          .foregroundStyle(.secondary)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.horizontal, 5)
+      }
+
       // Pause/Resume section
       if controlMode == .active {
         PauseSection(onPause: pauseRecording)
@@ -23,9 +41,8 @@ struct StatusMenuView: View {
 
       MenuDivider()
 
-      MenuRow(title: "Open Dayflow", assetImage: "DayflowLogo", action: openDayflow)
+      MenuRow(title: "Open Sled", assetImage: "DayflowLogo", action: openDayflow)
       MenuRow(title: "Open Recordings", action: openRecordingsFolder)
-      MenuRow(title: "Check for Updates", action: checkForUpdates)
 
       MenuDivider()
 
@@ -70,13 +87,6 @@ struct StatusMenuView: View {
     }
   }
 
-  private func checkForUpdates() {
-    performAfterMenuDismiss {
-      updaterManager.checkForUpdates(showUI: true)
-      NSApp.activate(ignoringOtherApps: true)
-    }
-  }
-
   private func quitDayflow() {
     performAfterMenuDismiss {
       AppDelegate.allowTermination = true
@@ -103,7 +113,7 @@ private struct PauseSection: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       // Header
-      Text("Pause Dayflow")
+      Text("Pause Sled")
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 5)
@@ -201,7 +211,7 @@ private struct PausedSection: View {
 
       // Resume button
       MenuRow(
-        title: "Resume Dayflow",
+        title: "Resume Sled",
         systemImage: "play.circle",
         accent: .accentColor,
         action: onResume
@@ -217,7 +227,7 @@ private struct CountdownBadge: View {
 
   var body: some View {
     HStack(spacing: 0) {
-      Text("Dayflow paused for ")
+      Text("Sled paused for ")
         .font(.system(size: 11, weight: .medium))
       Text(remainingTime)
         .font(.system(size: 11, weight: .bold).monospacedDigit())

@@ -14,7 +14,7 @@ struct OnboardingFlow: View {
   @State private var step: OnboardingStep = OnboardingStepMigration.restoredStep()
   @AppStorage("didOnboard") private var didOnboard = false
   @AppStorage("onboardingSelectedProviderID") private var selectedProviderIDRawValue =
-    LLMProviderID.gemini.rawValue
+    LLMProviderID.local.rawValue
   @AppStorage("onboardingHasPaidAI") private var savedHasPaidAISelection = ""
   @EnvironmentObject private var categoryStore: CategoryStore
   @State private var userHasPaidAI: Bool? = OnboardingFlow.loadSavedHasPaidAISelection()
@@ -22,7 +22,7 @@ struct OnboardingFlow: View {
   @State private var routingSaveErrorMessage: String?
 
   private var selectedProviderID: LLMProviderID {
-    LLMProviderID(rawValue: selectedProviderIDRawValue) ?? .gemini
+    SledLocalLLMPolicy.allowedProvider
   }
 
   private var onboardingFilledSegments: Int {
@@ -306,7 +306,7 @@ struct OnboardingFlow: View {
       return true
     } catch {
       if presentsError {
-        routingSaveErrorMessage = "Dayflow couldn't save this provider. Please try again."
+        routingSaveErrorMessage = "Sled couldn't save this provider. Please try again."
       }
       AnalyticsService.shared.capture(
         "llm_provider_routing_save_failed",
@@ -741,7 +741,7 @@ struct OnboardingPrototypeDownloadReasonStep: View {
 
       VStack(spacing: 22) {
         VStack(spacing: 4) {
-          Text("What are you hoping to get out of Dayflow?")
+          Text("What are you hoping to get out of Sled?")
             .font(.custom("Figtree", size: 20))
             .foregroundColor(Color(hex: "89380E"))
 
@@ -1031,7 +1031,7 @@ struct CompletionView: View {
           onFinish()
         },
         content: {
-          Text("Launch Dayflow")
+          Text("Launch Sled")
             .font(.custom("Figtree", size: 16))
             .fontWeight(.semibold)
         },

@@ -430,7 +430,7 @@ extension ChatView {
             .frame(width: 42, height: 42)
 
             VStack(alignment: .leading, spacing: 2) {
-              Text("Ask about your Dayflow data")
+              Text("Ask about your Sled data")
                 .font(.custom("InstrumentSerif-Regular", size: 30))
                 .foregroundColor(Color(hex: "2F2A24"))
 
@@ -679,7 +679,7 @@ extension ChatView {
         text: $inputText,
         isFocused: $isInputFocused,
         focusToken: composerFocusToken,
-        placeholder: "Ask about your Dayflow data...",
+        placeholder: "Ask about your Sled data...",
         onSubmit: submitCurrentInputIfAllowed
       )
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -789,27 +789,11 @@ extension ChatView {
 
   var providerToggle: some View {
     HStack(spacing: 6) {
-      ProviderTogglePill(
-        title: "Gemini",
-        isSelected: selectedProvider == .gemini,
-        isEnabled: isProviderAvailable(.gemini)
-      ) {
-        handleProviderSelection(.gemini)
-      }
-      ProviderTogglePill(
-        title: "Codex",
-        isSelected: selectedProvider == .codex,
-        isEnabled: isProviderAvailable(.codex)
-      ) {
-        handleProviderSelection(.codex)
-      }
-      ProviderTogglePill(
-        title: "Claude",
-        isSelected: selectedProvider == .claude,
-        isEnabled: isProviderAvailable(.claude)
-      ) {
-        handleProviderSelection(.claude)
-      }
+      Text(LocalLLMRuntimeStatus.current().userMessage)
+        .font(.system(size: 12, weight: .medium))
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
     .padding(4)
     .background(
