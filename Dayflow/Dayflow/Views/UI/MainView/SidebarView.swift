@@ -1,3 +1,4 @@
+import ShadcnUI
 import SwiftUI
 
 private enum SidebarMetrics {
@@ -82,12 +83,14 @@ enum SidebarIcon: CaseIterable {
 struct SidebarView: View {
   @Binding var selectedIcon: SidebarIcon
   @ObservedObject private var badgeManager = NotificationBadgeManager.shared
-  @ObservedObject private var authManager = DayflowAuthManager.shared
 
   private var visibleIcons: [SidebarIcon] {
     SidebarIcon.allCases.filter { icon in
-      if icon == .journal || icon == .agents { return false }
-      if icon == .flow { return SidebarView.showsFlowTab(flowEnabled: authManager.flowEnabled) }
+      if icon == .journal || icon == .weekly || icon == .chat || icon == .agents || icon == .daily
+        || icon == .flow
+      {
+        return false
+      }
       return true
     }
   }
@@ -129,16 +132,16 @@ struct SidebarIconButton: View {
   let isSelected: Bool
   var showBadge: Bool = false
   let action: () -> Void
+  @Environment(\.shadcnPalette) private var palette
+  @Environment(\.shadcnTheme) private var theme
 
   var body: some View {
     Button(action: action) {
       VStack(spacing: SidebarMetrics.iconLabelSpacing) {
         ZStack {
           if isSelected {
-            Image("IconBackground")
-              .resizable()
-              .interpolation(.high)
-              .renderingMode(.original)
+            RoundedRectangle(cornerRadius: theme.radius.md, style: .continuous)
+              .fill(palette.sidebarAccent)
               .frame(
                 width: SidebarMetrics.selectedBackgroundSize,
                 height: SidebarMetrics.selectedBackgroundSize
@@ -150,21 +153,18 @@ struct SidebarIconButton: View {
               .resizable()
               .interpolation(.high)
               .renderingMode(.template)
-              .foregroundColor(
-                isSelected ? Color(hex: "F96E00") : Color(red: 0.6, green: 0.4, blue: 0.3)
-              )
+              .foregroundStyle(isSelected ? palette.sidebarPrimary : palette.sidebarForeground)
               .aspectRatio(contentMode: .fit)
               .frame(width: SidebarMetrics.iconSize, height: SidebarMetrics.iconSize)
           } else if let sys = icon.systemNameFallback {
             Image(systemName: sys)
               .font(.system(size: SidebarMetrics.fallbackSymbolSize))
-              .foregroundColor(
-                isSelected ? Color(hex: "F96E00") : Color(red: 0.6, green: 0.4, blue: 0.3))
+              .foregroundStyle(isSelected ? palette.sidebarPrimary : palette.sidebarForeground)
           }
 
           if showBadge {
             Circle()
-              .fill(Color(hex: "F96E00"))
+              .fill(palette.sidebarPrimary)
               .frame(width: SidebarMetrics.badgeSize, height: SidebarMetrics.badgeSize)
               .offset(x: SidebarMetrics.badgeOffsetX, y: SidebarMetrics.badgeOffsetY)
           }
@@ -172,18 +172,15 @@ struct SidebarIconButton: View {
         .frame(width: SidebarMetrics.iconContainerSize, height: SidebarMetrics.iconContainerSize)
 
         Text(icon.displayName)
-          .font(.custom("Figtree", size: SidebarMetrics.labelFontSize))
+          .font(theme.typography.sans(theme.typography.xs, weight: .medium))
           .lineLimit(1)
           .minimumScaleFactor(0.75)
-          .foregroundColor(
-            isSelected ? Color(hex: "F96E00") : Color(red: 0.6, green: 0.4, blue: 0.3))
+          .foregroundStyle(isSelected ? palette.sidebarPrimary : palette.mutedForeground)
       }
       .frame(width: SidebarMetrics.itemSize, height: SidebarMetrics.itemSize)
       .contentShape(Rectangle())
     }
-    .buttonStyle(DayflowPressScaleButtonStyle())
+    .buttonStyle(.shadcnBare)
     .contentShape(Rectangle())
-    .hoverScaleEffect(scale: 1.02)
-    .pointingHandCursor()
   }
 }

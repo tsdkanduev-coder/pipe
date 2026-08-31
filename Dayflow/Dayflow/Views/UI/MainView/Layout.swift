@@ -1,5 +1,6 @@
 import AppKit
 import Sentry
+import ShadcnUI
 import SwiftUI
 
 extension MainView {
@@ -117,7 +118,7 @@ extension MainView {
       TimelineFailureToastView(
         title: payload.title,
         message: payload.message,
-        actionTitle: payload.destination == .account ? "Open Account" : "Open Provider Settings",
+        actionTitle: "Retry",
         onOpenSettings: { handleTimelineFailureToastOpenSettings(payload) },
         onDismiss: { handleTimelineFailureToastDismiss(payload) }
       )
@@ -421,100 +422,49 @@ private struct TimelineFailureToastView: View {
   let onDismiss: () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .top, spacing: 10) {
-        Image(systemName: "exclamationmark.triangle.fill")
-          .font(.system(size: 14))
-          .foregroundColor(Color(hex: "C04A00"))
-          .padding(.top, 2)
-
-        // Mirrors ScreenRecordingPermissionNoticeView: semibold title with a
-        // quieter body. Untitled (generic fallback) toasts keep the old look.
-        VStack(alignment: .leading, spacing: 3) {
-          if let title {
-            Text(title)
-              .font(.custom("Figtree", size: 13))
-              .fontWeight(.semibold)
-              .foregroundColor(.black.opacity(0.86))
-          }
-
-          Text(message)
-            .font(.custom("Figtree", size: title == nil ? 13 : 12))
-            .foregroundColor(.black.opacity(title == nil ? 0.82 : 0.62))
-            .fixedSize(horizontal: false, vertical: true)
-        }
-
-        Button(action: onDismiss) {
-          Image(systemName: "xmark")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.black.opacity(0.45))
-            .frame(width: 18, height: 18)
-        }
-        .buttonStyle(.plain)
-        .hoverScaleEffect(scale: 1.02)
-        .pointingHandCursorOnHover(reassertOnPressEnd: true)
+    VStack(alignment: .leading, spacing: Space.x3) {
+      ShadcnAlert(variant: .destructive, systemImage: "exclamationmark.triangle.fill") {
+        ShadcnAlertTitle(title ?? "Timeline error")
+        ShadcnAlertDescription(message)
       }
-
-      DayflowSurfaceButton(
-        action: onOpenSettings,
-        content: {
-          HStack(spacing: 6) {
-            Image(systemName: "gearshape")
-              .font(.system(size: 12))
-            Text(actionTitle)
-              .font(.custom("Figtree", size: 12))
-              .fontWeight(.semibold)
-          }
-        },
-        background: Color(red: 0.25, green: 0.17, blue: 0),
-        foreground: .white,
-        borderColor: .clear,
-        cornerRadius: 8,
-        horizontalPadding: 14,
-        verticalPadding: 8,
-        showOverlayStroke: true
-      )
+      HStack(spacing: Space.x2) {
+        ShadcnButton(actionTitle, variant: .primary, action: onOpenSettings)
+        ShadcnButton("Dismiss", variant: .ghost, action: onDismiss)
+      }
     }
-    .padding(14)
     .frame(width: 360, alignment: .leading)
-    .background(Color(hex: "FFF8F2"))
-    .cornerRadius(12)
-    .overlay(
-      RoundedRectangle(cornerRadius: 12)
-        .stroke(Color(hex: "F3D9C2"), lineWidth: 1)
-    )
-    .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
   }
 }
 
 private struct ScreenRecordingPermissionNoticeView: View {
   let onOpenSettings: () -> Void
   let onDismiss: () -> Void
+  @Environment(\.sledChrome) private var chrome
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .top, spacing: 10) {
         Image(systemName: "record.circle.fill")
           .font(.system(size: 15))
-          .foregroundColor(Color(hex: "C7352D"))
+          .foregroundStyle(chrome.accent)
           .padding(.top, 2)
 
         VStack(alignment: .leading, spacing: 3) {
           Text("Screen recording access needed")
             .font(.custom("Figtree", size: 13))
             .fontWeight(.semibold)
-            .foregroundColor(.black.opacity(0.86))
+            .foregroundStyle(chrome.foreground)
 
-          Text("Dayflow cannot update your timeline until access is restored.")
+          Text("Sled cannot update your timeline until access is restored.")
             .font(.custom("Figtree", size: 12))
-            .foregroundColor(.black.opacity(0.62))
+            .foregroundStyle(chrome.secondary)
             .fixedSize(horizontal: false, vertical: true)
         }
 
         Button(action: onDismiss) {
           Image(systemName: "xmark")
             .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.black.opacity(0.45))
+            .foregroundStyle(chrome.secondary)
             .frame(width: 18, height: 18)
         }
         .buttonStyle(.plain)
@@ -533,8 +483,8 @@ private struct ScreenRecordingPermissionNoticeView: View {
               .fontWeight(.semibold)
           }
         },
-        background: Color(red: 0.25, green: 0.17, blue: 0),
-        foreground: .white,
+        background: chrome.accent,
+        foreground: chrome.onAccent,
         borderColor: .clear,
         cornerRadius: 8,
         horizontalPadding: 14,
@@ -544,11 +494,11 @@ private struct ScreenRecordingPermissionNoticeView: View {
     }
     .padding(14)
     .frame(width: 360, alignment: .leading)
-    .background(Color(hex: "FFF8F2"))
+    .background(chrome.background)
     .cornerRadius(12)
     .overlay(
       RoundedRectangle(cornerRadius: 12)
-        .stroke(Color(hex: "F3D9C2"), lineWidth: 1)
+        .stroke(chrome.hairline, lineWidth: 1)
     )
     .shadow(color: Color.black.opacity(0.12), radius: 12, x: 0, y: 6)
   }

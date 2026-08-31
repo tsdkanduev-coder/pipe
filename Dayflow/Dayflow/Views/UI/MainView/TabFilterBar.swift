@@ -1,3 +1,4 @@
+import ShadcnUI
 import SwiftUI
 
 struct TabFilterBar: View {
@@ -50,30 +51,7 @@ struct TabFilterBar: View {
     let isIdle: Bool
 
     var body: some View {
-      HStack(spacing: 10) {
-        Circle()
-          .fill(Color(hex: category.colorHex))
-          .frame(width: 10, height: 10)
-
-        Text(category.name)
-          .font(
-            Font.custom("Figtree", size: 13)
-              .weight(.medium)
-          )
-          .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.2))
-          .lineLimit(1)
-          .fixedSize()
-      }
-      .padding(.horizontal, 8)
-      .padding(.vertical, 5)
-      .frame(height: 26)
-      .background(.white.opacity(0.76))
-      .cornerRadius(6)
-      .overlay(
-        RoundedRectangle(cornerRadius: 6)
-          .inset(by: 0.25)
-          .stroke(Color(red: 0.88, green: 0.88, blue: 0.88), lineWidth: 0.5)
-      )
+      ShadcnBadge(category.name, variant: .outline)
     }
   }
 
@@ -119,7 +97,7 @@ struct TabFilterBar: View {
 
   private var overflowGradient: some View {
     LinearGradient(
-      gradient: Gradient(colors: [Color.clear, Color(hex: "FFF8F1")]),
+      gradient: Gradient(colors: [Color.clear, Color.primary.opacity(0.06)]),
       startPoint: .leading,
       endPoint: .trailing
     )

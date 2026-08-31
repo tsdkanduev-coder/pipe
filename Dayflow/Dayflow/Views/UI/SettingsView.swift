@@ -10,30 +10,24 @@ import SwiftUI
 
 struct SettingsView: View {
   private enum SettingsTab: String, CaseIterable, Identifiable {
-    case account
-    case storage
+    case general
     case privacy
-    case providers
-    case aiTools
-    case data
-    case other
+    case localModel
+    case storage
 
     var id: String { rawValue }
 
     var title: String {
       switch self {
-      case .account: return "Account"
-      case .storage: return "Storage"
+      case .general: return "General"
       case .privacy: return "Privacy"
-      case .providers: return "Providers"
-      case .aiTools: return "MCP / CLI"
-      case .data: return "Export"
-      case .other: return "Other"
+      case .localModel: return "Local model"
+      case .storage: return "Storage"
       }
     }
   }
 
-  @State private var selectedTab: SettingsTab = .account
+  @State private var selectedTab: SettingsTab = .general
 
   @Namespace private var sidebarSelectionNamespace
 
@@ -43,11 +37,9 @@ struct SettingsView: View {
   @StateObject private var privacyViewModel = RecordingPrivacySettingsViewModel()
   @StateObject private var providersViewModel = ProvidersSettingsViewModel()
   @StateObject private var otherViewModel = OtherSettingsViewModel()
-  @StateObject private var agentAccessViewModel = AgentAccessViewModel()
 
   var body: some View {
     contentWithSheets
-      .environment(\.colorScheme, .light)
   }
 
   private var contentWithSheets: some View {
@@ -105,7 +97,6 @@ struct SettingsView: View {
         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
     }
     .onAppear {
-      DayflowAuthManager.shared.loadStoredSessionIfNeeded()
       providersViewModel.handleOnAppear()
       otherViewModel.refreshAnalyticsState()
       storageViewModel.refreshStorageIfNeeded(isStorageTab: selectedTab == .storage)
@@ -120,15 +111,15 @@ struct SettingsView: View {
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: .openProvidersSettings)) { _ in
-      guard selectedTab != .providers else { return }
+      guard selectedTab != .localModel else { return }
       withAnimation(.easeOut(duration: 0.18)) {
-        selectedTab = .providers
+        selectedTab = .localModel
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: .openAccountSettings)) { _ in
-      guard selectedTab != .account else { return }
+      guard selectedTab != .general else { return }
       withAnimation(.easeOut(duration: 0.18)) {
-        selectedTab = .account
+        selectedTab = .general
       }
     }
   }
@@ -175,8 +166,8 @@ struct SettingsView: View {
   private var sidebar: some View {
     VStack(alignment: .leading, spacing: 0) {
       Text("Settings")
-        .font(.custom("InstrumentSerif-Regular", size: 22))
-        .foregroundColor(.black.opacity(0.9))
+        .font(.system(size: 22, weight: .semibold))
+        .foregroundStyle(.primary)
         .padding(.leading, 10)
         .padding(.bottom, 18)
 
@@ -200,9 +191,9 @@ struct SettingsView: View {
   private var sidebarFooter: some View {
     let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     return VStack(alignment: .leading, spacing: 8) {
-      Text("Dayflow v\(version)")
-        .font(.custom("Figtree", size: 11))
-        .foregroundColor(.black.opacity(0.4))
+      Text("Sled v\(version)")
+        .font(.system(size: 11))
+        .foregroundStyle(.secondary)
 
       Button {
         NotificationCenter.default.post(name: .showWhatsNew, object: nil)
@@ -214,7 +205,7 @@ struct SettingsView: View {
           Image(systemName: "arrow.up.right")
             .font(.system(size: 9, weight: .semibold))
         }
-        .foregroundColor(Color(red: 0.25, green: 0.17, blue: 0))
+        .foregroundStyle(.primary)
       }
       .buttonStyle(.plain)
       .pointingHandCursor()
@@ -228,9 +219,8 @@ struct SettingsView: View {
       }
     } label: {
       Text(tab.title)
-        .font(.custom("Figtree", size: 13))
-        .fontWeight(.semibold)
-        .foregroundColor(.black.opacity(selectedTab == tab ? 0.9 : 0.55))
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(selectedTab == tab ? .primary : .secondary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
@@ -242,7 +232,7 @@ struct SettingsView: View {
           }
         }
     }
-    .buttonStyle(SettingsSidebarButtonStyle())
+    .buttonStyle(.shadcnBare)
     .pointingHandCursor()
   }
 
@@ -254,20 +244,14 @@ struct SettingsView: View {
     // actually exist (the sidebar is vertical, not left/right tabs).
     Group {
       switch selectedTab {
-      case .account:
-        SettingsAccountSection()
-      case .storage:
-        SettingsStorageTabView(viewModel: storageViewModel)
+      case .general:
+        SettingsOtherTabView(viewModel: otherViewModel, launchAtLoginManager: launchAtLoginManager)
       case .privacy:
         SettingsRecordingPrivacyTabView(viewModel: privacyViewModel)
-      case .providers:
-        SettingsProvidersTabView(viewModel: providersViewModel)
-      case .aiTools:
-        SettingsAgentAccessTabView(viewModel: agentAccessViewModel)
-      case .data:
-        SettingsDataTabView(viewModel: otherViewModel)
-      case .other:
-        SettingsOtherTabView(viewModel: otherViewModel, launchAtLoginManager: launchAtLoginManager)
+      case .localModel:
+        SettingsLocalModelTabView(viewModel: providersViewModel)
+      case .storage:
+        SettingsStorageTabView(viewModel: storageViewModel)
       }
     }
     .id(selectedTab)

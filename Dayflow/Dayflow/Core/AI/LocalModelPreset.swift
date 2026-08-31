@@ -13,13 +13,15 @@ struct LocalModelInstructionSet {
 }
 
 enum LocalModelPreset: String, CaseIterable, Codable {
+  case llama32Vision = "llama32_vision"
   case qwen3VL4B = "qwen3_vl_4b"
   case qwen25VL3B = "qwen25_vl_3b"
 
-  static let recommended: LocalModelPreset = .qwen3VL4B
+  static let recommended: LocalModelPreset = .llama32Vision
 
   var displayName: String {
     switch self {
+    case .llama32Vision: return "llama3.2-vision"
     case .qwen3VL4B: return "Qwen3-VL 4B"
     case .qwen25VL3B: return "Qwen2.5-VL 3B"
     }
@@ -27,6 +29,11 @@ enum LocalModelPreset: String, CaseIterable, Codable {
 
   var highlightBullets: [String] {
     switch self {
+    case .llama32Vision:
+      return [
+        "Default Sled vision model when already installed",
+        "Sled does not re-pull models automatically",
+      ]
     case .qwen3VL4B:
       return [
         "New, most powerful local VLM",
@@ -35,7 +42,7 @@ enum LocalModelPreset: String, CaseIterable, Codable {
       ]
     case .qwen25VL3B:
       return [
-        "Legacy default for Dayflow local mode",
+        "Legacy local vision model",
         "Lower VRAM footprint but weaker perception",
       ]
     }
@@ -43,6 +50,8 @@ enum LocalModelPreset: String, CaseIterable, Codable {
 
   func modelId(for engine: LocalEngine) -> String {
     switch (self, engine) {
+    case (.llama32Vision, _):
+      return SledIdentity.defaultVisionModel
     case (.qwen3VL4B, .lmstudio):
       return "Qwen3-VL-4B-Instruct"
     case (.qwen25VL3B, .lmstudio):
@@ -88,13 +97,14 @@ enum LocalModelPreset: String, CaseIterable, Codable {
         buttonTitle: "Open download in LM Studio",
         buttonURL: lmStudioDownloadURL,
         note:
-          "Tip: enable \"Launch local server\" so Dayflow can talk to LM Studio at \(LocalEngine.lmstudio.defaultBaseURL)."
+          "Tip: enable \"Launch local server\" so Sled can talk to LM Studio at \(LocalEngine.lmstudio.defaultBaseURL)."
       )
     }
   }
 
   var ollamaPullCommand: String {
     switch self {
+    case .llama32Vision: return "ollama pull llama3.2-vision"
     case .qwen3VL4B: return "ollama pull qwen3-vl:4b"
     case .qwen25VL3B: return "ollama pull qwen2.5vl:3b"
     }
@@ -102,6 +112,8 @@ enum LocalModelPreset: String, CaseIterable, Codable {
 
   var lmStudioDownloadURL: URL? {
     switch self {
+    case .llama32Vision:
+      return nil
     case .qwen3VL4B:
       return URL(
         string: "https://model.lmstudio.ai/download/lmstudio-community/Qwen3-VL-4B-Instruct-GGUF")

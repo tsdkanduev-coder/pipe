@@ -12,7 +12,8 @@ extension StorageManager {
       .appendingPathComponent(
         "Library/Containers/\(bundleID)/Data/Library/Application Support/Dayflow", isDirectory: true
       )
-    let newBase = appSupport.appendingPathComponent("Dayflow", isDirectory: true)
+    let newBase = appSupport.appendingPathComponent(
+      SledStoragePaths.applicationSupportDirectoryName, isDirectory: true)
 
     guard legacyBase.path != newBase.path else { return }
 
@@ -79,7 +80,14 @@ extension StorageManager {
     newDatabaseURL: URL
   ) {
     let destinationDir = newDatabaseURL.deletingLastPathComponent()
-    let filenames = ["chunks.sqlite", "chunks.sqlite-wal", "chunks.sqlite-shm"]
+    let filenames = [
+      SledStoragePaths.legacyDatabaseFileName,
+      "\(SledStoragePaths.legacyDatabaseFileName)-wal",
+      "\(SledStoragePaths.legacyDatabaseFileName)-shm",
+      SledStoragePaths.databaseFileName,
+      "\(SledStoragePaths.databaseFileName)-wal",
+      "\(SledStoragePaths.databaseFileName)-shm",
+    ]
 
     guard
       filenames.contains(where: {

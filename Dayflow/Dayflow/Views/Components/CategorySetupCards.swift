@@ -108,7 +108,7 @@ struct EditableCategoryCard: View {
 
         Text(
           category.details.isEmpty
-            ? "Add a description to help Dayflow understand your workflow." : category.details
+            ? "Add a description to help Sled understand your workflow." : category.details
         )
         .font(Font.custom("Figtree", size: 12).weight(.medium))
         .foregroundColor(Color(red: 0.35, green: 0.35, blue: 0.35))

@@ -196,26 +196,12 @@ final class DailyRecapGenerator {
       throw DailyRecapGeneratorError.emptyCards(day: context.sourceDayString)
     }
 
-    let provider = selectedProvider()
+    let provider = DailyRecapProvider.local
     let metadata = DailyStandupGenerationMetadata(
       provider: provider,
       sourceDay: context.sourceDayString
     )
-
-    switch provider {
-    case .dayflow:
-      return try await generateWithDayflow(context: context, metadata: metadata)
-    case .local:
-      return try await generateWithLocal(context: context, metadata: metadata)
-    case .gemini:
-      return try await generateWithGemini(context: context, metadata: metadata)
-    case .chatgpt:
-      return try await generateWithChatGPT(context: context, metadata: metadata)
-    case .claude:
-      return try await generateWithClaude(context: context, metadata: metadata)
-    case .none:
-      throw DailyRecapGeneratorError.noProviderSelected
-    }
+    return try await generateWithLocal(context: context, metadata: metadata)
   }
 
   static func makeCardsText(day: String, cards: [TimelineCard]) -> String {

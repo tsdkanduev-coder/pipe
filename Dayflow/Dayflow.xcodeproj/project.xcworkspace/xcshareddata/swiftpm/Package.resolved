@@ -29,6 +29,15 @@
       }
     },
     {
+      "identity" : "shadkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jasonkneen/ShadKit",
+      "state" : {
+        "revision" : "eb1f43161aca7aef49a98d41b246d8398dbcad09",
+        "version" : "0.1.0"
+      }
+    },
+    {
       "identity" : "sentry-cocoa",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa.git",

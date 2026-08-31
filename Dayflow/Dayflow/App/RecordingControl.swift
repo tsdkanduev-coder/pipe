@@ -37,7 +37,10 @@ enum RecordingControl {
   static func start(reason: String) {
     Task { @MainActor in
       guard await hasScreenRecordingPermission() else {
-        print("[RecordingControl] Screen recording permission not granted; start ignored")
+        print(
+          "[RecordingControl] Screen Recording permission missing; start refused (not silent)"
+        )
+        AppState.shared.setRecording(false, analyticsReason: reason, persistPreference: false)
         ScreenRecordingPermissionNotice.post(reason: "recording_control_start")
         return
       }
@@ -48,7 +51,9 @@ enum RecordingControl {
   }
 
   static func stop(reason: String) {
+    // Stop capture only. Existing SQLite rows stay on disk.
     PauseManager.shared.clearPauseState()
+    RawActivityRecorder.closeOpenSession()
     AppState.shared.setRecording(false, analyticsReason: reason)
   }
 

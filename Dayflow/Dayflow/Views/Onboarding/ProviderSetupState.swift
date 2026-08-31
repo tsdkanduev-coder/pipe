@@ -136,7 +136,7 @@ class ProviderSetupState: ObservableObject {
           title: "Before you begin",
           contentType: .information(
             "Install \(cliName)",
-            "Dayflow uses \(cliName) through your existing \(providerName) subscription. Install it and sign in on this Mac, then we'll verify the connection."
+            "Sled does not use \(cliName) through your existing \(providerName) subscription. Install it and sign in on this Mac, then we'll verify the connection."
           )
         ),
         SetupStep(

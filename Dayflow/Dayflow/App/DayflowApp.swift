@@ -3,6 +3,7 @@
 //  Dayflow
 //
 
+import ShadcnUI
 import Sparkle
 import SwiftUI
 
@@ -114,9 +115,9 @@ struct DayflowApp: App {
   @AppStorage("didOnboard") private var didOnboard = false
   @AppStorage("useBlankUI") private var useBlankUI = false
   @AppStorage("hasCompletedJournalOnboarding") private var hasCompletedJournalOnboarding = false
-  @State private var showVideoLaunch = true
-  @State private var contentOpacity = 0.0
-  @State private var contentScale = 0.98
+  @State private var showVideoLaunch = false
+  @State private var contentOpacity = 1.0
+  @State private var contentScale = 1.0
   @StateObject private var categoryStore = CategoryStore()
   @StateObject private var journalCoordinator = JournalCoordinator()
 
@@ -129,7 +130,7 @@ struct DayflowApp: App {
   private let updaterManager = UpdaterManager.shared
 
   var body: some Scene {
-    Window("Dayflow", id: "main") {
+    Window("Sled", id: "main") {
       ZStack {
         // Main app UI or onboarding with entrance animation
         Group {
@@ -139,7 +140,7 @@ struct DayflowApp: App {
               .environmentObject(categoryStore)
               .environmentObject(updaterManager)
               .environmentObject(journalCoordinator)
-          } else if !showVideoLaunch {
+          } else {
             OnboardingFlow()
               .environmentObject(AppState.shared)
               .environmentObject(categoryStore)
@@ -186,7 +187,7 @@ struct DayflowApp: App {
         }
 
         // Journal onboarding video (full window coverage, above sidebar)
-        if journalCoordinator.showOnboardingVideo {
+        if false, journalCoordinator.showOnboardingVideo {
           JournalOnboardingVideoView(onComplete: {
             withAnimation(.easeOut(duration: 0.3)) {
               journalCoordinator.showOnboardingVideo = false
@@ -201,19 +202,7 @@ struct DayflowApp: App {
       .background {
         MainWindowRegistrationView()
 
-        if didOnboard {
-          ZStack {
-            Image("MainUIBackground")
-              .resizable()
-              .scaledToFill()
-
-            Color(red: 0.98, green: 0.96, blue: 0.93)
-              .opacity(0.4)
-          }
-          .ignoresSafeArea()
-          .allowsHitTesting(false)
-          .accessibilityHidden(true)
-        }
+        EmptyView()
       }
       .onAppear {
         if !showVideoLaunch {
@@ -228,8 +217,8 @@ struct DayflowApp: App {
         }
       }
       .frame(minWidth: 900, maxWidth: .infinity, minHeight: 508, maxHeight: .infinity)
+      .shadcnSurface(SledShadcnTheme.current)
     }
-    .windowStyle(.hiddenTitleBar)
     .windowResizability(.contentMinSize)
     .defaultSize(width: 1195, height: 675)
 

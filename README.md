@@ -1,139 +1,141 @@
-<div align="center">
-  <img src="docs/images/dayflow_header.png" alt="Dayflow" width="380">
+# Sled
 
-  <p><strong>A private, automatic work journal for Mac.</strong></p>
+A private, local-first work journal for Mac. Sled keeps Dayflow’s capture and timeline UI, rebranded, and stores everything on disk.
 
-  <p>
-    Dayflow understands the work you do on your Mac and turns it into a clear timeline of your day.
-    Built from the ground up for privacy, it’s open source, local-first, and can run entirely with local AI.
-  </p>
+Derived from [Dayflow](https://github.com/JerryZLiu/Dayflow) (MIT). See `NOTICE`.
 
-  <p>
-    <a href="https://trendshift.io/repositories/17458" target="_blank" rel="noreferrer">
-      <img src="https://trendshift.io/api/badge/repositories/17458" alt="JerryZLiu/Dayflow | Trendshift" width="250" height="55">
-    </a>
-  </p>
+**macOS 14+.** Unsigned builds are OK. Not on the App Store.
 
-  <p>
-    <a href="https://dayflow.so/api/download?source=github_readme_top">
-      <img src="docs/images/download_dayflow_button.png" alt="Download Dayflow for Mac" width="352">
-    </a>
-  </p>
-</div>
+## Chrome
 
-## Automatic Timeline
+SwiftUI uses [ShadKit](https://github.com/jasonkneen/ShadKit) product **ShadcnUI** only (MIT, macOS 14+, from 0.1.0). Theme is shadcn `neutralLight` / `neutralDark` with dark `--sidebar-primary` patched to `oklch(0.922 0 0)`. Radius 0.5rem. SF Pro. No AIElementsUI, CanvasUI, or React.
 
-Dayflow turns raw screen activity into a chronological timeline of what you actually did, so you can reconstruct the day without timers or manual notes.
+## First-run
 
-<p align="center">
-  <img src="docs/images/hero_animation_1080p.gif" alt="Dayflow automatic timeline view" width="900">
-</p>
+First launch is **one Sled screen**: Screen Recording permission, Start recording, and local LLM status (Ollama / LM Studio). There is no Dayflow intro video, referral, Pro sign-in, or Codex/Claude CLI gate. Continue writes local routing and marks onboarding complete. Capture can start without a model.
 
-## Daily Standup
+## Permissions (S1)
 
-See a GitHub-style activity grid of your day, plus yesterday's highlights, today's priorities, and blockers, so you can walk into standup with the update already written.
+Sled needs **Screen & System Audio Recording**.
 
-<p align="center">
-  <img src="docs/images/daily.png" alt="Dayflow daily workflow and standup view" width="900">
-</p>
+1. Open Sled.
+2. When prompted, grant Screen Recording, or open **System Settings → Privacy & Security → Screen Recording** and enable Sled.
+3. If permission is missing, recording does **not** start silently. Status shows `Recording: off — Screen Recording permission required`.
+4. Menu bar and Settings → Storage show **Recording: on** or **Recording: off**.
+5. Stop recording does **not** delete SQLite rows.
 
-## Weekly Review
+## SQLite (S2)
 
-See your week at a glance: when you were focused, where time went, which apps dominated, and what pulled you off track.
-
-<p align="center">
-  <img src="docs/images/weekly.png" alt="Dayflow weekly analytics view" width="900">
-</p>
-
-## Chat With Your Work Journal
-
-Ask questions about your day/week/year and get answers grounded in your timeline instead of digging through notes, screenshots, or memory.
-
-<p align="center">
-  <img src="docs/images/chat.gif" alt="Dayflow chat feature answering questions about your workday" width="900">
-</p>
-
-## What Dayflow Does
-
-Dayflow runs quietly on your Mac and builds a useful record of your day from your screen activity.
-
-| Feature | How it works | Why it's useful |
-| --- | --- | --- |
-| Automatic timeline | Dayflow captures lightweight screen chunks, analyzes them with your chosen AI provider, and turns the day into activity cards. | You get an accurate work journal without starting timers or writing notes. |
-| Context-aware summaries | It looks at what you were actually doing on screen, not just which app was active. | Cursor, Chrome, YouTube, or Slack become meaningful work context instead of vague app usage. |
-| Daily standup | Dayflow pulls yesterday's highlights, today's tasks, and blockers from your timeline. | You can write updates in minutes and stop relying on memory. |
-| Chat with your work journal | Ask natural-language questions about your timeline and recent activity. | You can recover details, explain where time went, and turn raw activity into useful answers. |
-| Weekly review | It aggregates your timeline into focus patterns, categories, app usage, and interaction graphs. | You can see where the week actually went and spot the habits that helped or hurt. |
-| Distraction tracking | Dayflow identifies distracting sessions and shows them alongside focused work. | You can catch drift early without manually labeling every break. |
-| Timeline export | Export your timeline as Markdown for any date range. | Useful for status updates, client notes, personal reviews, or saving a searchable record. |
-| Local-first storage | Recordings, timeline data, and the app database stay on your Mac by default. | You stay in control of sensitive screen history and can delete it whenever you want. |
-| AI provider choice | Use local models, Gemini, ChatGPT, or Claude depending on your privacy and quality needs. | You can trade off privacy, cost, speed, and summary quality instead of being locked into one backend. |
-| Automatic cleanup | Configure storage limits and let Dayflow purge old recordings automatically. | You get the value of a work journal without filling your disk forever. |
-
-## Why People Use It
-
-Most time trackers tell you which app was open. Dayflow tries to understand what you were doing.
-
-Cursor for two hours could mean shipping a feature, debugging auth, reviewing a PR, or getting lost in setup. Dayflow gives you the context, not just the window title.
-
-## Privacy
-
-Dayflow is local-first and open source.
-
-Your recordings, timeline, and database live on your Mac at:
+Path (not iCloud):
 
 ```text
-~/Library/Application Support/Dayflow/
+~/Library/Application Support/Sled/sled.sqlite
 ```
 
-You choose how AI analysis runs:
+Same Dayflow store, path-shifted. Frames are JPEG files under `~/Library/Application Support/Sled/recordings/`. Screenshot bytes are never stored in the loopback API.
 
-- Local models through Ollama or LM Studio
-- Gemini with your own API key
-- ChatGPT or Claude through their local CLI tools
+Rows used by the API (`timeline_cards`): `started_at`, `ended_at`, `app`, `window_title`, `summary`.
 
-If you choose a cloud provider, activity data needed for analysis is sent to that provider. If you choose local models, analysis stays on your machine.
+Stop capture does not delete these rows. There is no network for the store.
 
-## Install
+## Loopback API (S3)
 
-### Download
+While Sled is running:
 
-Download the latest `Dayflow.dmg` from GitHub Releases:
+```text
+GET http://127.0.0.1:18741/v1/actions?since=<iso8601>&limit=50
+```
 
-<p>
-  <a href="https://dayflow.so/api/download?source=github_readme_install">
-    <img src="docs/images/download_dayflow_button.png" alt="Download Dayflow for Mac" width="352">
-  </a>
-</p>
-
-Open the DMG, drag Dayflow into Applications, then grant macOS Screen & System Audio Recording permission when prompted.
-
-### Homebrew
+- Host: `127.0.0.1` only. Port: `18741`.
+- Fields: `id`, `started_at`, `ended_at`, `app`, `window_title`, `summary`.
+- Default `limit` is 50. Max is 200.
+- Empty result is `[]`.
+- No screenshot bytes.
+- If Sled is not running: connection refused. No cloud fallback.
 
 ```bash
-brew install --cask dayflow
+curl 'http://127.0.0.1:18741/v1/actions?since=2026-08-31T00:00:00Z&limit=50'
 ```
 
-## Requirements
+## Local LLM only (S6)
 
-- macOS 14+
-- Screen & System Audio Recording permission
-- Optional: Gemini API key, Ollama, LM Studio, Codex CLI, or Claude Code depending on your preferred AI provider
+Summaries and action extraction never leave the Mac.
 
-## Build From Source
+- Provider is locked to **Local**.
+- Ollama: `http://127.0.0.1:11434`
+- LM Studio: `http://127.0.0.1:1234`
+- Default vision model: `llama3.2-vision` if already present. Sled does **not** re-pull models.
+- Gemini, ChatGPT, Claude, OpenRouter, and other cloud hosts are disabled. There is no API-key fallback.
+- If Ollama / LM Studio is down: capture and the raw timeline still work; `summary` stays null; status shows **Install/start Ollama (or LM Studio)**.
+
+If the model is not installed yet:
 
 ```bash
-git clone https://github.com/JerryZLiu/Dayflow.git
-cd Dayflow
-open Dayflow/Dayflow.xcodeproj
+ollama pull llama3.2-vision
 ```
 
-Select the Dayflow scheme in Xcode and run it.
+Keep Ollama running, or start LM Studio’s local server on port 1234.
 
-## Contributing
+## Gatekeeper (S4)
 
-Issues and pull requests are welcome. If you are planning a larger change, open an issue first so the scope is clear.
+This environment is Linux and cannot produce a real `.app` / `.dmg`. Build on a Mac (see below), then:
+
+1. Open `Sled.dmg`.
+2. Drag **Sled** into Applications.
+3. First launch: **Right-click → Open** (unsigned is OK).
+4. No App Store.
+
+## Build on macOS 14+ (exact commands)
+
+Requires Xcode and [create-dmg](https://github.com/create-dmg/create-dmg) (`brew install create-dmg`).
+
+```bash
+git clone https://github.com/tsdkanduev-coder/sled.git
+cd sled
+
+xcodebuild \
+  -project Dayflow/Dayflow.xcodeproj \
+  -scheme Dayflow \
+  -configuration Release \
+  -derivedDataPath build \
+  MACOSX_DEPLOYMENT_TARGET=14.0 \
+  CODE_SIGN_IDENTITY="" \
+  CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+
+# Optional unsigned DMG named Sled.dmg
+create-dmg \
+  --volname "Sled" \
+  --window-pos 200 120 \
+  --window-size 540 380 \
+  --icon-size 100 \
+  --app-drop-link 400 180 \
+  --icon "Sled.app" 140 180 \
+  "Sled.dmg" \
+  "build/Build/Products/Release/Sled.app"
+```
+
+Helper script (same commands): `scripts/build_macos.sh`.
+
+The Xcode scheme remains `Dayflow`; the shipped product name is **Sled** (`Sled.app`, bundle id `ru.kanduev.sled`).
+
+Do not invent a `.dmg` on Linux. A GitHub Release with a binary is published only after a real Mac build.
+
+## Verify
+
+| Check | How |
+| --- | --- |
+| First-run | One Sled screen (permission + start + local LLM). No Pro / CLI / intro video |
+| Chrome | ShadKit ShadcnUI, NavigationSplitView days + timeline, Settings Local only |
+| Recording status | Menu / Settings show `on` or `off` |
+| Stop | Stop recording; `sled.sqlite` rows remain |
+| SQLite path | `ls ~/Library/Application\ Support/Sled/sled.sqlite` |
+| Loopback | `curl` example above; empty `[]` is success |
+| Process down | Quit Sled; `curl` gets connection refused |
+| Ollama | Stop Ollama; capture continues; summaries stay null; UI says install/start Ollama |
+| Gatekeeper | Right-click → Open on an unsigned Mac build |
 
 ## License
 
-Dayflow is licensed under the MIT License.
+MIT. Copyright for Sled modifications is 2026 Tsevdn Kanduev. Upstream Dayflow remains copyright Jerry Liu. See `LICENSE` and `NOTICE`.

@@ -89,6 +89,7 @@ struct CanvasTimelineDataView: View {
   @EnvironmentObject private var categoryStore: CategoryStore
   @EnvironmentObject private var appState: AppState
   @EnvironmentObject private var retryCoordinator: RetryCoordinator
+  @Environment(\.sledChrome) private var chrome
 
   private var pixelsPerMinute: CGFloat {
     hourHeight / 60
@@ -266,8 +267,8 @@ struct CanvasTimelineDataView: View {
       ForEach(0..<(CanvasConfig.endHour - CanvasConfig.startHour), id: \.self) { _ in
         VStack(spacing: 0) {
           Rectangle()
-            .fill(Color.black.opacity(0.1))
-            .frame(height: 0.75)
+            .fill(chrome.hairline)
+            .frame(height: 1)
           Spacer()
         }
         .frame(height: hourHeight)
@@ -280,8 +281,8 @@ struct CanvasTimelineDataView: View {
       ForEach(CanvasConfig.startHour..<CanvasConfig.endHour, id: \.self) { hour in
         let hourIndex = hour - CanvasConfig.startHour
         Text(formatHour(hour))
-          .font(.custom("Figtree", size: timeLabelFontSize))
-          .foregroundColor(Color(hex: "594838"))
+          .font(.custom("Figtree", size: timeLabelFontSize).weight(.medium))
+          .foregroundColor(chrome.secondary)
           .padding(.trailing, 5)
           .padding(.top, 2)
           .frame(width: CanvasConfig.timeColumnWidth, alignment: .trailing)
@@ -406,12 +407,12 @@ struct CanvasTimelineDataView: View {
           height: projectionHeight,
           yPosition: calculateYPosition(for: projection.start) + 1,
           gradient: recordingStatusGradient,
-          gradientOpacity: 0.70,
-          baseColor: Color(hex: "D9C6BA"),
-          strokeColor: Color.white.opacity(0.52),
-          strokeWidth: 0.75,
-          shadowColor: .black.opacity(0.10),
-          shadowRadius: 4
+          gradientOpacity: 1.0,
+          baseColor: chrome.surface,
+          strokeColor: chrome.hairline,
+          strokeWidth: 1,
+          shadowColor: .clear,
+          shadowRadius: 0
         ) {
           if !isCompactProjection {
             generatingStatusText
@@ -424,11 +425,11 @@ struct CanvasTimelineDataView: View {
           yPosition: calculateYPosition(for: projection.start) + 1,
           gradient: pausedStatusGradient,
           gradientOpacity: 1.0,
-          baseColor: .clear,
-          strokeColor: .white,
+          baseColor: chrome.surface,
+          strokeColor: chrome.hairline,
           strokeWidth: 1,
-          shadowColor: .black.opacity(0.03),
-          shadowRadius: 2,
+          shadowColor: .clear,
+          shadowRadius: 0,
           onTap: handlePausedStatusCardTap
         ) {
           pausedStatusText
@@ -440,11 +441,11 @@ struct CanvasTimelineDataView: View {
           yPosition: calculateYPosition(for: projection.start) + 1,
           gradient: pausedStatusGradient,
           gradientOpacity: 1.0,
-          baseColor: .clear,
-          strokeColor: .white,
+          baseColor: chrome.surface,
+          strokeColor: chrome.hairline,
           strokeWidth: 1,
-          shadowColor: .black.opacity(0.03),
-          shadowRadius: 2,
+          shadowColor: .clear,
+          shadowRadius: 0,
           onTap: handlePausedStatusCardTap
         ) {
           stoppedStatusText
@@ -507,12 +508,7 @@ struct CanvasTimelineDataView: View {
 
   private var recordingStatusGradient: LinearGradient {
     LinearGradient(
-      stops: [
-        .init(color: Color(hex: "5E7FC0"), location: 0.00),
-        .init(color: Color(hex: "D88ECE"), location: 0.35),
-        .init(color: Color(hex: "FFC19E"), location: 0.68),
-        .init(color: Color(hex: "FFEDE0"), location: 1.00),
-      ],
+      colors: [chrome.surface, chrome.surface],
       startPoint: .leading,
       endPoint: .trailing
     )
@@ -520,10 +516,7 @@ struct CanvasTimelineDataView: View {
 
   private var pausedStatusGradient: LinearGradient {
     LinearGradient(
-      stops: [
-        .init(color: Color(hex: "F7E6D5"), location: 0.13),
-        .init(color: Color(hex: "DADEE4"), location: 1.00),
-      ],
+      colors: [chrome.surface, chrome.surface],
       startPoint: .leading,
       endPoint: .trailing
     )
@@ -535,15 +528,12 @@ struct CanvasTimelineDataView: View {
         config: timelineSpinnerConfig,
         visualScale: 0.5
       )
-      Text("Generating your next card")
+      Text(SledTimelineCopy.loading)
     }
-    .font(
-      Font.custom("Figtree", size: 12)
-        .weight(.semibold)
-    )
+    .font(SledChrome.TypeRamp.body)
     .lineSpacing(2.4)
     .tracking(0)
-    .foregroundColor(.white)
+    .foregroundColor(chrome.foreground)
     .lineLimit(1)
     .truncationMode(.tail)
   }
@@ -551,14 +541,14 @@ struct CanvasTimelineDataView: View {
   private var pausedStatusText: some View {
     statusText(
       iconName: "pause.fill",
-      message: "Dayflow is paused. Click 'Resume' to generate new activity cards."
+      message: "Sled is paused. Click 'Resume' to generate new activity cards."
     )
   }
 
   private var stoppedStatusText: some View {
     statusText(
       iconName: "play.fill",
-      message: "Dayflow isn't recording. Click 'Resume' to generate new activity cards."
+      message: "Sled isn't recording. Click 'Resume' to generate new activity cards."
     )
   }
 
@@ -566,16 +556,13 @@ struct CanvasTimelineDataView: View {
     HStack(spacing: 10) {
       Image(systemName: iconName)
         .font(.system(size: 11, weight: .semibold))
-        .foregroundColor(Color(hex: "888D95"))
+        .foregroundColor(chrome.secondary)
       Text(message)
     }
-    .font(
-      Font.custom("Figtree", size: 12)
-        .weight(.regular)
-    )
+    .font(SledChrome.TypeRamp.caption)
     .lineSpacing(2.4)
     .tracking(0)
-    .foregroundColor(Color(hex: "888D95"))
+    .foregroundColor(chrome.secondary)
     .lineLimit(1)
     .truncationMode(.tail)
   }

@@ -29,7 +29,7 @@ struct OnboardingPrototypeRoleSelectionStep: View {
       Spacer()
         .frame(height: 39)
 
-      Text("Help Dayflow understand your work patterns better.")
+      Text("Help Sled understand your work patterns better.")
         .font(.custom("InstrumentSerif-Regular", size: 40))
         .tracking(-1.2)
         .multilineTextAlignment(.center)
@@ -47,7 +47,7 @@ struct OnboardingPrototypeRoleSelectionStep: View {
             .font(.custom("Figtree", size: 20))
             .foregroundColor(Color(hex: "89380E"))
 
-          Text("This will help Dayflow generate categories that are most helpful to you.")
+          Text("This will help Sled generate categories that are most helpful to you.")
             .font(.custom("Figtree", size: 20))
             .foregroundColor(Color(hex: "89380E"))
         }

@@ -466,6 +466,12 @@ final class ScreenRecorder: NSObject, @unchecked Sendable {
       capturedAt: capturedAt,
       idleSecondsAtCapture: idleSecondsAtCapture
     )
+    let frontmost = FrontmostWindowInfo.capture()
+    RawActivityRecorder.recordCapture(
+      at: capturedAt,
+      app: frontmost.app,
+      windowTitle: frontmost.windowTitle
+    )
     return fileURL
   }
 

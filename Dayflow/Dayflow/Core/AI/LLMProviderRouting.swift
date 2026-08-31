@@ -37,11 +37,11 @@ enum LLMProviderRoutingStore {
     defer { lock.unlock() }
 
     if defaults.object(forKey: storageKey) != nil {
-      return try decodeStoredRouting(from: defaults)
+      return SledLocalLLMPolicy.enforce(try decodeStoredRouting(from: defaults))
     }
 
     let migration = try migrateLegacyArtifacts(from: defaults)
-    return try saveLocked(migration.routing, to: defaults)
+    return try saveLocked(SledLocalLLMPolicy.enforce(migration.routing), to: defaults)
   }
 
   static func save(
@@ -114,10 +114,11 @@ enum LLMProviderRoutingStore {
       throw LLMProviderRoutingStoreError.unsupportedSchemaVersion(routing.schemaVersion)
     }
 
+    let locked = SledLocalLLMPolicy.enforce(routing)
     let normalized = LLMProviderRouting(
       schemaVersion: routing.schemaVersion,
-      primary: routing.primary,
-      secondary: routing.secondary
+      primary: locked.primary,
+      secondary: locked.secondary
     )
 
     let encoded: Data

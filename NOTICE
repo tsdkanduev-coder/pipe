@@ -1,0 +1,18 @@
+Sled
+Copyright (c) 2026 Tsevdn Kanduev
+
+This product is derived from Dayflow:
+https://github.com/JerryZLiu/Dayflow
+
+Dayflow
+Copyright (c) 2025 Jerry Liu
+Licensed under the MIT License (see LICENSE).
+
+Sled keeps Dayflow’s local capture and timeline UI, rebrands the shipped
+product, and restricts inference to local Ollama or LM Studio. No Dayflow
+or screenpipe names or marks are used as the product name.
+
+Chrome tokens come from ShadKit (ShadcnUI), MIT:
+https://github.com/jasonkneen/ShadKit
+shadcn nova + neutral OKLCH. Dark --sidebar-primary is patched to
+oklch(0.922 0 0).

@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class ProvidersSettingsViewModel: ObservableObject {
-  @Published private(set) var routing = LLMProviderRouting(primary: .gemini)
+  @Published private(set) var routing = SledLocalLLMPolicy.lockedRouting
   @Published private(set) var hasLoadedRouting = false
   @Published var setupModalProvider: LLMProviderID? {
     didSet {
@@ -325,7 +325,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
     } catch {
       hasLoadedRouting = false
       providerRoutingErrorMessage =
-        "Dayflow couldn't load your provider routing. Your saved providers were left unchanged."
+        "Sled couldn't load your provider routing. Your saved providers were left unchanged."
     }
   }
 
@@ -646,14 +646,14 @@ final class ProvidersSettingsViewModel: ObservableObject {
 
   private func openAccountForDayflowPro(_ providerId: LLMProviderID) {
     guard providerId == .dayflow else { return }
-    upgradeStatusMessage = "Dayflow Pro is required for hosted cards and transcription."
+    upgradeStatusMessage = "Local Ollama or LM Studio is required for summaries."
     openAccountForDayflowProvider(providerId)
   }
 
   private func openAccountForDayflowProvider(_ providerId: LLMProviderID) {
     guard providerId == .dayflow else { return }
     if isDayflowProActive {
-      upgradeStatusMessage = "Manage Dayflow Pro from Account."
+      upgradeStatusMessage = "Cloud accounts are disabled. Sled is local only."
     }
     NotificationCenter.default.post(name: .openAccountSettings, object: nil)
     AnalyticsService.shared.capture(
@@ -680,7 +680,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
       return true
     } catch {
       providerRoutingErrorMessage =
-        "Dayflow couldn't save your provider routing. Your previous selection is still active."
+        "Sled couldn't save your provider routing. Your previous selection is still active."
       return false
     }
   }
@@ -728,28 +728,8 @@ final class ProvidersSettingsViewModel: ObservableObject {
   private var providerCatalog: [CompactProviderInfo] {
     [
       CompactProviderInfo(
-        id: .dayflow,
-        summary: "Hosted cards & transcription • no API keys • requires Pro"
-      ),
-      CompactProviderInfo(
-        id: .claude,
-        summary: "Uses Claude Code through your existing Claude plan"
-      ),
-      CompactProviderInfo(
-        id: .chatGPT,
-        summary: "Uses Codex CLI through your existing ChatGPT plan"
-      ),
-      CompactProviderInfo(
-        id: .gemini,
-        summary: "Gemini free tier • fast & accurate"
-      ),
-      CompactProviderInfo(
-        id: .openAICompatible,
-        summary: "OpenRouter or another OpenAI Chat Completions endpoint"
-      ),
-      CompactProviderInfo(
         id: .local,
-        summary: "Private & offline • 16GB+ RAM • less intelligent"
+        summary: "Local only — Ollama 127.0.0.1:11434 or LM Studio 127.0.0.1:1234"
       ),
     ]
   }
@@ -765,7 +745,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
       case .lmstudio: engineName = "LM Studio"
       case .custom: engineName = "Custom"
       }
-      let displayModel = localModelId.isEmpty ? "qwen2.5vl:3b" : localModelId
+      let displayModel = localModelId.isEmpty ? SledIdentity.defaultVisionModel : localModelId
       let truncatedModel =
         displayModel.count > 30 ? String(displayModel.prefix(27)) + "..." : displayModel
       return "\(engineName) - \(truncatedModel)"
@@ -779,7 +759,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
       return openAICompatibleModelID.isEmpty
         ? "OpenAI-compatible endpoint" : openAICompatibleModelID
     case .dayflow:
-      return isDayflowProActive ? "Dayflow Pro active" : "Requires Dayflow Pro"
+      return "Local only"
     }
   }
 
@@ -810,7 +790,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
     case .openAICompatible:
       return "OpenAI-compatible API"
     case .dayflow:
-      return "Dayflow Backend"
+      return "Local"
     }
   }
 
@@ -821,7 +801,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
     case .chatGPT: return "ChatGPT"
     case .claude: return "Claude"
     case .openAICompatible: return "OpenAI-compatible"
-    case .dayflow: return "Dayflow Pro"
+    case .dayflow: return "Disabled"
     }
   }
 
@@ -840,7 +820,7 @@ struct CompactProviderInfo: Identifiable {
     case .chatGPT: return "ChatGPT"
     case .claude: return "Claude"
     case .openAICompatible: return "OpenAI-compatible"
-    case .dayflow: return "Dayflow Pro"
+    case .dayflow: return "Disabled"
     }
   }
 }

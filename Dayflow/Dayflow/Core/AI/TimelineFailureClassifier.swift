@@ -53,54 +53,39 @@ struct TimelineFailureClassification {
   /// Toast copy for this failure, or nil when the failure isn't worth
   /// interrupting the user for (transient/flaky/unknown).
   func toastContent(fallbackProviderLabel: String?) -> TimelineFailureToastContent? {
-    let provider =
-      providerName ?? displayName(forProviderLabel: fallbackProviderLabel)
-      ?? "your AI provider"
+    _ = fallbackProviderLabel
+    _ = providerName
 
     switch kind {
     case .dayflowProRequired:
       return TimelineFailureToastContent(
-        title: "Dayflow Pro required",
+        title: "Local model required",
         body:
-          "Timeline generation is paused for this account. Subscribe, or refer a friend and earn a free month of Pro. Your recordings are safe — use Retry on the failed cards once you're back.",
-        destination: .account
+          "Sled uses Ollama or LM Studio only. There is no cloud subscribe path. Install or start a local runtime, then use Retry on the failed cards. Your recordings are safe.",
+        destination: .providers
       )
 
     case .providerLoginExpired:
-      let body: String
-      if let command = reauthCommand(for: provider) {
-        body =
-          "Run '\(command)' in Terminal to sign in again, or reconnect from provider settings. Your recordings are safe in the meantime."
-      } else {
-        body =
-          "Sign in to \(provider) again from provider settings. Your recordings are safe in the meantime."
-      }
       return TimelineFailureToastContent(
-        title: "Your \(provider) login expired",
-        body: body,
+        title: "Local runtime needs a restart",
+        body:
+          "Sled does not use cloud logins. Restart Ollama or LM Studio and Retry the failed cards. Your recordings are safe in the meantime.",
         destination: .providers
       )
 
     case .cliNotInstalled:
-      let body: String
-      if let command = reauthCommand(for: provider) {
-        body =
-          "Dayflow talks to \(provider) through its CLI but couldn't find it. Reinstall it and run '\(command)' in Terminal, or switch providers in settings."
-      } else {
-        body =
-          "Dayflow couldn't find the command-line tool for \(provider). Reinstall it, or switch providers in settings."
-      }
       return TimelineFailureToastContent(
-        title: "\(provider)'s command-line tool is missing",
-        body: body,
+        title: "Local runtime is missing",
+        body:
+          "Sled does not use Codex or Claude CLI. Install Ollama (127.0.0.1:11434) or LM Studio (127.0.0.1:1234).",
         destination: .providers
       )
 
     case .cliOutdated:
       return TimelineFailureToastContent(
-        title: "Your codex CLI is out of date",
+        title: "Local runtime is out of date",
         body:
-          "This model needs a newer version. Run 'npm install -g @openai/codex@latest' (or 'brew upgrade codex') in Terminal to update it.",
+          "Sled does not use the Codex CLI. Update Ollama or LM Studio, then Retry.",
         destination: .providers
       )
 
@@ -108,7 +93,7 @@ struct TimelineFailureClassification {
       return TimelineFailureToastContent(
         title: "Can't reach Ollama / LM Studio",
         body:
-          "Make sure it's running — Dayflow resumes with the next batch. Prefer zero setup? Gemini is free in provider settings.",
+          "Install/start Ollama (or LM Studio). Capture and the raw timeline still work. There is no cloud fallback.",
         destination: .providers
       )
 
@@ -122,41 +107,41 @@ struct TimelineFailureClassification {
 
     case .apiKeyProblem:
       return TimelineFailureToastContent(
-        title: "Your \(provider) API key isn't working",
+        title: "Local runtime isn't responding",
         body:
-          "It looks missing, expired, or suspended. Add a fresh key in provider settings — Gemini keys are free at aistudio.google.com.",
+          "Sled has no API-key path. Confirm Ollama or LM Studio is running on loopback and that the vision model is loaded.",
         destination: .providers
       )
 
     case .usageLimitHit:
       return TimelineFailureToastContent(
-        title: "You've hit \(provider)'s usage limit",
+        title: "Local model is overloaded",
         body:
-          "New activity will process once the limit resets — use Retry on any failed cards to fill the gap. Adding a backup provider in settings avoids this.",
+          "New activity will process once the local runtime is free. Use Retry on any failed cards. There is no backup cloud provider.",
         destination: .providers
       )
 
     case .outOfCredits:
       return TimelineFailureToastContent(
-        title: "\(provider) is out of credits",
+        title: "Local model couldn't finish",
         body:
-          "Top up billing with your provider, or switch to a free option like Gemini in provider settings.",
+          "Sled has no billing or credit path. Restart Ollama or LM Studio, then Retry.",
         destination: .providers
       )
 
     case .geoBlocked:
       return TimelineFailureToastContent(
-        title: "\(provider) isn't available in your region",
+        title: "Local runtime isn't reachable",
         body:
-          "This provider blocks API use where you are. Switching to a different provider in settings fixes it.",
+          "Sled only talks to Ollama or LM Studio on this Mac. There is no regional cloud fallback.",
         destination: .providers
       )
 
     case .accountBlocked:
       return TimelineFailureToastContent(
-        title: "Your \(provider) project is blocked",
+        title: "Local runtime refused the request",
         body:
-          "Access was denied for this account — creating a fresh API key usually fixes it. Update it in provider settings.",
+          "Sled has no cloud account. Restart Ollama or LM Studio and Retry.",
         destination: .providers
       )
 
@@ -164,42 +149,20 @@ struct TimelineFailureClassification {
       return TimelineFailureToastContent(
         title: "Your selected model isn't available",
         body:
-          "The model Dayflow tried to use isn't available on \(provider). Check the model selection in provider settings, or switch providers.",
+          "The local vision model isn't loaded. Open Ollama or LM Studio and confirm llama3.2-vision (or your chosen model) is available.",
         destination: .providers
       )
 
     case .notConfigured:
       return TimelineFailureToastContent(
-        title: "No AI provider connected",
+        title: "No local model connected",
         body:
-          "Recordings are saved, but nothing gets summarized until you connect one. Gemini is free and takes about two minutes.",
+          "Recordings are saved, but nothing gets summarized until Ollama or LM Studio is running. There is no Gemini or Pro fallback.",
         destination: .providers
       )
 
     case .transient, .modelFlaky, .unknown:
       return nil
-    }
-  }
-
-  private func reauthCommand(for provider: String) -> String? {
-    switch provider {
-    case "ChatGPT": return "codex auth"
-    case "Claude": return "claude login"
-    case "AWS": return "aws sso login"
-    default: return nil
-    }
-  }
-
-  /// Provider labels arrive as lowercase analytics names ("gemini",
-  /// "chatgpt", "local"); map them to names fit for user-facing copy.
-  private func displayName(forProviderLabel label: String?) -> String? {
-    switch label?.lowercased() {
-    case "gemini": return "Gemini"
-    case "chatgpt": return "ChatGPT"
-    case "claude": return "Claude"
-    case "local", "ollama": return "Ollama/LM Studio"
-    case "dayflow": return "Dayflow"
-    default: return label
     }
   }
 }

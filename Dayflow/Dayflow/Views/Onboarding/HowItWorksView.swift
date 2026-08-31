@@ -23,12 +23,12 @@ struct HowItWorksView: View {
     (
       "OnboardingHow",
       "Install and Forget",
-      "Dayflow takes periodic screen captures to understand what you're working on, all stored privately on your device. You can toggle this whenever you like."
+      "Sled takes periodic screen captures to understand what you're working on, all stored privately on your device. You can toggle this whenever you like."
     ),
     (
       "OnboardingSecurity",
       "Privacy by Default",
-      "Dayflow can run entirely on local AI models, which means your data never leaves your computer. You can also find the source code below - please consider giving it a star on Github!"
+      "Sled can run entirely on local AI models, which means your data never leaves your computer. You can also find the source code below - please consider giving it a star on Github!"
     ),
     (
       "OnboardingUnderstanding",
@@ -97,7 +97,7 @@ struct HowItWorksView: View {
               Image("GithubIcon").resizable().aspectRatio(contentMode: .fit).frame(
                 width: 20, height: 20
               ).colorInvert()
-              Text("Star Dayflow on GitHub").font(.custom("Figtree", size: 14)).fontWeight(.medium)
+              Text("Star Sled on GitHub").font(.custom("Figtree", size: 14)).fontWeight(.medium)
             }
           },
           background: Color(red: 0.25, green: 0.17, blue: 0),

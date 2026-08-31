@@ -53,7 +53,7 @@ struct SettingsAccountSection: View {
     ) {
       VStack(alignment: .leading, spacing: 0) {
         SettingsRow(
-          label: "Dayflow account",
+          label: "Sled account",
           subtitle: authManager.isSignedIn
             ? authManager.displayIdentity
             : nil,
@@ -280,7 +280,7 @@ private struct ActiveProCard: View {
   }
 
   private var title: String {
-    isGifted ? "Gifted Pro" : "Dayflow Pro"
+    isGifted ? "Gifted Pro" : "Local"
   }
 
   private var badge: String {

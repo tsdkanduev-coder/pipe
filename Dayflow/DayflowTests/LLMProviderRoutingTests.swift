@@ -238,7 +238,7 @@ final class LLMProviderRoutingTests: XCTestCase {
 
     let routing = try LLMProviderRoutingStore.load(from: defaults)
 
-    XCTAssertEqual(routing, LLMProviderRouting(primary: .dayflow, secondary: .claude))
+    XCTAssertEqual(routing, SledLocalLLMPolicy.lockedRouting)
     XCTAssertEqual(CodexPromptPreferences.load(from: defaults), sharedOverrides)
     XCTAssertEqual(ClaudePromptPreferences.load(from: defaults), sharedOverrides)
     XCTAssertEqual(DayflowEndpointPreferences.load(from: defaults), "https://example.com/api")
@@ -269,7 +269,7 @@ final class LLMProviderRoutingTests: XCTestCase {
 
     XCTAssertEqual(
       try LLMProviderRoutingStore.load(from: defaults),
-      LLMProviderRouting(primary: .openAICompatible, secondary: .claude)
+      SledLocalLLMPolicy.lockedRouting
     )
     XCTAssertEqual(CodexPromptPreferences.load(from: defaults), sharedOverrides)
     XCTAssertEqual(ClaudePromptPreferences.load(from: defaults), sharedOverrides)
@@ -300,7 +300,7 @@ final class LLMProviderRoutingTests: XCTestCase {
 
     let routing = try LLMProviderRoutingStore.load(from: defaults)
 
-    XCTAssertEqual(routing, LLMProviderRouting(primary: .dayflow))
+    XCTAssertEqual(routing, SledLocalLLMPolicy.lockedRouting)
     XCTAssertEqual(
       CodexPromptPreferences.load(from: defaults),
       existingChatGPTOverrides
@@ -440,7 +440,7 @@ final class LLMProviderRoutingTests: XCTestCase {
 
     let loaded = try LLMProviderRoutingStore.load(from: defaults)
 
-    XCTAssertEqual(loaded, existing)
+    XCTAssertEqual(loaded, SledLocalLLMPolicy.lockedRouting)
     XCTAssertTrue(CodexPromptPreferences.load(from: defaults).isEmpty)
     XCTAssertTrue(ClaudePromptPreferences.load(from: defaults).isEmpty)
   }
@@ -487,7 +487,7 @@ final class LLMProviderRoutingTests: XCTestCase {
       to: defaults
     )
     XCTAssertEqual(
-      try LLMProviderRoutingStore.load(from: defaults), LLMProviderRouting(primary: .chatGPT))
+      try LLMProviderRoutingStore.load(from: defaults), SledLocalLLMPolicy.lockedRouting)
 
     defaults.set(Data("not-json".utf8), forKey: LLMProviderRoutingStore.storageKey)
     XCTAssertThrowsError(try LLMProviderRoutingStore.load(from: defaults)) { error in

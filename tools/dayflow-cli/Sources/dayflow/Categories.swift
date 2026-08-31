@@ -18,7 +18,7 @@ struct Category {
   let isIdle: Bool
 }
 
-private let dayflowDefaultsDomain = "teleportlabs.com.Dayflow"
+private let dayflowDefaultsDomain = "ru.kanduev.sled"
 
 /// Matches CategoryPersistence.defaultCategories in the app.
 private let defaultCategories: [Category] = [

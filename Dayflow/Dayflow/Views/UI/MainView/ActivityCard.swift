@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import ImageIO
 import QuartzCore
+import ShadcnUI
 import SwiftUI
 
 struct ActivityCard: View {
@@ -109,44 +110,19 @@ struct ActivityCard: View {
         }
       }
     } else {
-      // Empty state
-      VStack(spacing: 10) {
-        Spacer()
-        if hasAnyActivities {
-          Text("Select an activity to view details")
-            .font(.custom("Figtree", size: 15))
-            .fontWeight(.regular)
-            .foregroundColor(.gray.opacity(0.5))
-        } else {
-          if appState.isRecording {
-            VStack(spacing: 6) {
-              Text("No cards yet")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.7))
-              Text(
-                "Cards are generated about every 15 minutes. If Dayflow is on and no cards show up within 30 minutes, please report a bug."
-              )
-              .font(.custom("Figtree", size: 13))
-              .foregroundColor(.gray.opacity(0.6))
-              .multilineTextAlignment(.center)
-              .padding(.horizontal, 16)
-            }
+      ShadcnCard {
+        ShadcnCardContent {
+          if !ScreenRecordingPermissionNotice.isGranted {
+            SledRecordingDisabledView()
+          } else if !hasAnyActivities {
+            SledEmptyTimelineView()
           } else {
-            VStack(spacing: 6) {
-              Text("Recording is off")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.7))
-              Text("Dayflow recording is currently turned off, so cards aren’t being produced.")
-                .font(.custom("Figtree", size: 13))
-                .foregroundColor(.gray.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-            }
+            Text("Select an activity to view details")
+              .font(.system(size: 13))
+              .foregroundStyle(.secondary)
           }
         }
-        Spacer()
       }
-      .padding(16)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .if(maxHeight != nil) { view in
         view.frame(maxHeight: maxHeight!)
@@ -156,6 +132,7 @@ struct ActivityCard: View {
 
   @ViewBuilder
   private func activityDetails(for activity: TimelineActivity) -> some View {
+    ShadcnCard {
     VStack(alignment: .leading, spacing: 16) {
       // Header
       HStack(alignment: .center) {
@@ -185,25 +162,7 @@ struct ActivityCard: View {
 
             HStack(spacing: 6) {
               if let badge = categoryBadge(for: activity.category) {
-                HStack(spacing: 6) {
-                  Circle()
-                    .fill(badge.indicator)
-                    .frame(width: 8, height: 8)
-
-                  Text(badge.name)
-                    .font(Font.custom("Figtree", size: 12))
-                    .foregroundColor(Color(red: 0.2, green: 0.2, blue: 0.2))
-                    .lineLimit(1)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.76))
-                .cornerRadius(6)
-                .overlay(
-                  RoundedRectangle(cornerRadius: 6)
-                    .inset(by: 0.25)
-                    .stroke(Color(red: 0.88, green: 0.88, blue: 0.88), lineWidth: 0.5)
-                )
+                ShadcnBadge(badge.name)
               }
 
               if !isFailedCard(activity) {
@@ -281,6 +240,7 @@ struct ActivityCard: View {
           summaryContent(for: activity)
         }
       }
+    }
     }
   }
 

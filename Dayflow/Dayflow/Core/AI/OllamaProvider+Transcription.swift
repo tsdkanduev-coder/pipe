@@ -246,7 +246,7 @@ extension OllamaProvider {
         code: 11,
         userInfo: [
           NSLocalizedDescriptionKey:
-            "It looks like your local AI is currently down. Please make sure that your Ollama/LMStudio is up and running properly. If you're having trouble getting local AI to work, consider switching to Gemini in settings."
+            "Install/start Ollama (or LM Studio). Capture and the raw timeline still work. Summaries stay empty until a local model is available."
         ]
       )
     }
