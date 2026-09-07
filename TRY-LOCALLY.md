@@ -11,15 +11,33 @@
 
 - Mac с Apple Silicon
 - Xcode
-- [Ollama](https://ollama.com)
+- [Ollama](https://ollama.com) — поставить и оставить запущенной
+
+## Модель Qwen
+
+PIP **не** кладёт модель в репозиторий. Она живёт в Ollama.
+
+1. Поставь Ollama и открой её, чтобы демон слушал `127.0.0.1:11434`.
+2. При первом запуске PIP сам делает `ollama pull qwen3.5:4b` (~3.4 GB), если Ollama уже доступна. В окне PIP прогресса не будет — это фон.
+3. Если Ollama не была запущена в этот момент, скачай модель руками:
+
+```bash
+ollama pull qwen3.5:4b
+```
+
+Проверка:
+
+```bash
+ollama list
+```
+
+В списке должна быть `qwen3.5:4b`. Без неё лента не соберётся: запись экрана идёт, карточек нет.
 
 ## Собрать и запустить
 
 ```bash
 git clone https://github.com/tsdkanduev-coder/pipe.git
 cd pipe
-
-ollama pull qwen3.5:4b
 
 xcodebuild \
   -project Dayflow/Dayflow.xcodeproj \
@@ -44,8 +62,9 @@ open /Applications/PIP.app
 ## После запуска
 
 1. Разреши **Screen Recording** именно для **PIP**, не для Dayflow.
-2. Оставь PIP включённым. Первые карточки появляются примерно через 15 минут записи.
-3. В Settings → **MCP / CLI** нажми Connect у MultiTool / Cursor / Codex.
+2. Убедись, что Ollama запущена. Если модели ещё нет — `ollama pull qwen3.5:4b`.
+3. Оставь PIP включённым. Первые карточки появляются примерно через 15 минут записи.
+4. В Settings → **MCP / CLI** нажми Connect у MultiTool / Cursor / Codex.
 
 Проверка, что HTTP жив:
 
