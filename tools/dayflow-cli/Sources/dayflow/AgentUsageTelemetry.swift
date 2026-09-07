@@ -163,7 +163,7 @@ enum AgentUsageTelemetry {
   }
 
   private static var analyticsEnabled: Bool {
-    let defaults = UserDefaults(suiteName: "teleportlabs.com.Dayflow")
+    let defaults = UserDefaults(suiteName: PipeIdentity.defaultsSuite)
     guard defaults?.object(forKey: "analyticsOptIn") != nil else { return true }
     return defaults?.bool(forKey: "analyticsOptIn") == true
   }

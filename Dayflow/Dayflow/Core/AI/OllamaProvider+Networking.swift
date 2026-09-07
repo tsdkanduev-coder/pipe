@@ -9,9 +9,10 @@ extension OllamaProvider {
   struct ChatRequest: Codable {
     let model: String
     let messages: [ChatMessage]
-    var temperature: Double = 0.7
+    var temperature: Double = 0.3
     var max_tokens: Int = 4000
     var stream: Bool = false
+    var think: Bool = false
   }
 
   struct ChatMessage: Codable {
@@ -149,7 +150,16 @@ extension OllamaProvider {
         }
 
         do {
-          let chatResponse = try JSONDecoder().decode(ChatResponse.self, from: data)
+          var chatResponse = try JSONDecoder().decode(ChatResponse.self, from: data)
+          chatResponse = ChatResponse(
+            choices: chatResponse.choices.map { choice in
+              ChatResponse.Choice(
+                message: ChatResponse.ResponseMessage(
+                  content: strippedThinking(choice.message.content)
+                )
+              )
+            }
+          )
           // Centralized success log
           let responseHeaders: [String: String] = httpResponse.allHeaderFields.reduce(into: [:]) {
             acc, kv in
@@ -279,6 +289,15 @@ extension OllamaProvider {
     if let token = authorizationBearerToken {
       request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
+  }
+
+  private func strippedThinking(_ text: String) -> String {
+    guard let regex = try? NSRegularExpression(pattern: #"<think>[\s\S]*?</think>"#) else {
+      return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    let range = NSRange(text.startIndex..., in: text)
+    return regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
   }
 }
 

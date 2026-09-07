@@ -91,7 +91,7 @@ enum LegacyLLMProviderMigration {
       providerID(
         from: defaults.string(forKey: Key.selectedProvider),
         combinedChatCLITool: preferredChatCLITool(from: defaults)
-      ) ?? .gemini
+      ) ?? .local
     return PrimarySelection(
       providerID: providerID,
       dayflowEndpointOverride: nil,

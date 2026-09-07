@@ -68,6 +68,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // any MCP client config whose recorded path went stale (app was moved).
     AgentBridgeServer.shared.startIfEnabled()
     AgentClientRegistration.repairStaleRegistrations()
+    LocalModelBootstrap.startIfNeeded()
+    AgentHTTPLauncher.shared.startIfNeeded()
 
     // Start heartbeat for DAU tracking
     appLaunchDate = Date()
@@ -121,9 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         do {
-          // Check if we have permission by trying to access content
           _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-          // Permission granted - restore saved preference or default to ON
           await MainActor.run {
             let savedPref = AppState.shared.getSavedPreference()
             AppState.shared.setRecording(savedPref ?? true, analyticsReason: "auto")
@@ -132,8 +132,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
           AnalyticsService.shared.capture(
             "recording_toggled", ["enabled": finalState, "reason": "auto"])
         } catch {
-          // No permission or error - don't start recording
-          // User will need to grant permission in onboarding
           await MainActor.run {
             AppState.shared.setRecording(
               false,

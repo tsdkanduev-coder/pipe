@@ -18,13 +18,11 @@ enum AgentBridge {
   static let protocolVersion = 1
 
   static var socketPath: String {
-    let appSupport = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    return appSupport.appendingPathComponent("Dayflow/agent.sock").path
+    return PipePaths.agentSocket.path
   }
 
   static var editsEnabled: Bool {
-    UserDefaults(suiteName: "teleportlabs.com.Dayflow")?
+    UserDefaults(suiteName: PipeIdentity.defaultsSuite)?
       .bool(forKey: "agentEditsEnabled") ?? false
   }
 

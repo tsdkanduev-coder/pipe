@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class ProvidersSettingsViewModel: ObservableObject {
-  @Published private(set) var routing = LLMProviderRouting(primary: .gemini)
+  @Published private(set) var routing = LLMProviderRouting(primary: .local)
   @Published private(set) var hasLoadedRouting = false
   @Published var setupModalProvider: LLMProviderID? {
     didSet {
@@ -257,7 +257,7 @@ final class ProvidersSettingsViewModel: ObservableObject {
     if normalized.caseInsensitiveCompare(recommended) == .orderedSame {
       return true
     }
-    return LocalModelPreferences.currentPreset() == .qwen3VL4B
+    return LocalModelPreferences.currentPreset() == .recommended
   }
 
   func refreshUpgradeBannerState() {

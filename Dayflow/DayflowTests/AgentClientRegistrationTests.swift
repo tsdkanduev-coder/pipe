@@ -6,9 +6,10 @@ final class AgentClientRegistrationTests: XCTestCase {
   private let executableURL = URL(fileURLWithPath: "/tmp/codex")
   private let cliPath = "/Applications/Dayflow.app/Contents/Helpers/dayflow"
 
-  func testCodexIsTheFirstVisibleClient() {
-    XCTAssertEqual(AgentClient.allCases.first, .codex)
-    XCTAssertEqual(AgentClient.codex.displayName, "Codex")
+  func testMultiToolIsTheFirstVisibleClient() {
+    XCTAssertEqual(AgentClient.allCases.first, .multiTool)
+    XCTAssertEqual(AgentClient.multiTool.displayName, "MultiTool")
+    XCTAssertEqual(AgentClient.cursor.displayName, "Cursor")
   }
 
   func testStatusReportsNotInstalledWithoutAnExecutable() {

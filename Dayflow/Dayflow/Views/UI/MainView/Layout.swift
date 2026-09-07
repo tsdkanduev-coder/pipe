@@ -505,7 +505,7 @@ private struct ScreenRecordingPermissionNoticeView: View {
             .fontWeight(.semibold)
             .foregroundColor(.black.opacity(0.86))
 
-          Text("Dayflow cannot update your timeline until access is restored.")
+          Text("PIP cannot update your timeline until screen recording is allowed.")
             .font(.custom("Figtree", size: 12))
             .foregroundColor(.black.opacity(0.62))
             .fixedSize(horizontal: false, vertical: true)
@@ -528,7 +528,7 @@ private struct ScreenRecordingPermissionNoticeView: View {
           HStack(spacing: 6) {
             Image(systemName: "gearshape")
               .font(.system(size: 12))
-            Text("Open System Settings")
+            Text("Allow & Restart")
               .font(.custom("Figtree", size: 12))
               .fontWeight(.semibold)
           }

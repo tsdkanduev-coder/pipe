@@ -33,7 +33,7 @@ struct SettingsView: View {
     }
   }
 
-  @State private var selectedTab: SettingsTab = .account
+  @State private var selectedTab: SettingsTab = .aiTools
 
   @Namespace private var sidebarSelectionNamespace
 
@@ -83,7 +83,7 @@ struct SettingsView: View {
       }
       .sheet(isPresented: $providersViewModel.isShowingLocalModelUpgradeSheet) {
         LocalModelUpgradeSheet(
-          preset: .qwen3VL4B,
+          preset: .qwen35_4b,
           initialEngine: providersViewModel.localEngine,
           initialBaseURL: providersViewModel.localBaseURL,
           initialModelId: providersViewModel.localModelId,
@@ -126,9 +126,9 @@ struct SettingsView: View {
       }
     }
     .onReceive(NotificationCenter.default.publisher(for: .openAccountSettings)) { _ in
-      guard selectedTab != .account else { return }
+      guard selectedTab != .aiTools else { return }
       withAnimation(.easeOut(duration: 0.18)) {
-        selectedTab = .account
+        selectedTab = .aiTools
       }
     }
   }
@@ -181,7 +181,7 @@ struct SettingsView: View {
         .padding(.bottom, 18)
 
       VStack(alignment: .leading, spacing: 2) {
-        ForEach(SettingsTab.allCases) { tab in
+        ForEach(SettingsTab.allCases.filter { $0 != .account }) { tab in
           sidebarButton(for: tab)
         }
       }
@@ -200,7 +200,7 @@ struct SettingsView: View {
   private var sidebarFooter: some View {
     let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     return VStack(alignment: .leading, spacing: 8) {
-      Text("Dayflow v\(version)")
+      Text("PIP v\(version)")
         .font(.custom("Figtree", size: 11))
         .foregroundColor(.black.opacity(0.4))
 

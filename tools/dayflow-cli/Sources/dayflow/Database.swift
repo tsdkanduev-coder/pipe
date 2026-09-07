@@ -54,9 +54,7 @@ final class Database {
     if let override = ProcessInfo.processInfo.environment["DAYFLOW_DB"] {
       return override
     }
-    let appSupport = FileManager.default.urls(
-      for: .applicationSupportDirectory, in: .userDomainMask)[0]
-    return appSupport.appendingPathComponent("Dayflow/chunks.sqlite").path
+    return PipePaths.database.path
   }
 
   init(path: String) throws {

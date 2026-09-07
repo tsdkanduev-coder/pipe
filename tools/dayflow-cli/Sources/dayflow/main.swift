@@ -14,7 +14,7 @@ import Foundation
 let arguments = Array(CommandLine.arguments.dropFirst())
 let flags = Set(arguments.filter { $0.hasPrefix("--") })
 let valueTakingFlags: Set<String> = [
-  "--category", "--from", "--to", "--color", "--title",
+  "--category", "--from", "--to", "--color", "--title", "--port",
   "--focus-minutes", "--distraction-limit-minutes",
   "--focus-category", "--distraction-category",
 ]
@@ -435,12 +435,12 @@ func runLink(remove: Bool) {
 }
 
 let helpText = """
-  dayflow — your Dayflow timeline, in the terminal
+  pipe — PIP timeline and agent context
 
   Usage
-    dayflow <command> [arguments] [--json]
+    pipe <command> [arguments] [--json]
 
-  Reading (works even when Dayflow is closed)
+  Reading (works even when PIP is closed)
     status                     Recording state and today's date
     timeline [YYYY-MM-DD]      A day's activities (aliases: today, yesterday)
       --summary                Include one-line descriptions
@@ -468,6 +468,9 @@ let helpText = """
     link                       Add `dayflow` to /usr/local/bin
     unlink                     Remove it
     mcp                        Run the MCP server (stdio)
+    serve [--port 8787]        Local HTTP API for MultiTool and other agents
+    context [YYYY-MM-DD]       Compact briefing to paste into an agent
+    guide                      When to call get_context and which tool follows
 
   All commands accept --json for stable, scriptable output.
   """
@@ -518,6 +521,17 @@ case "unlink":
   runLink(remove: true)
 case "mcp":
   runMCPServer()
+case "serve":
+  let port = UInt16(flagValue("--port") ?? "") ?? PipeIdentity.httpPort
+  runHTTPServer(port: port)
+case "context":
+  runContext(dayKey: positional.count > 1 ? positional[1] : nil)
+case "guide":
+  if CommandLine.arguments.contains("--json") {
+    printJSON(AgentGuide.json)
+  } else {
+    print(AgentGuide.markdown, terminator: "")
+  }
 case let command?:
   fail("Unknown command \"\(command)\". Run `dayflow help`.", code: 2)
 }

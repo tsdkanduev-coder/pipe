@@ -14,7 +14,7 @@ struct OnboardingFlow: View {
   @State private var step: OnboardingStep = OnboardingStepMigration.restoredStep()
   @AppStorage("didOnboard") private var didOnboard = false
   @AppStorage("onboardingSelectedProviderID") private var selectedProviderIDRawValue =
-    LLMProviderID.gemini.rawValue
+    LLMProviderID.local.rawValue
   @AppStorage("onboardingHasPaidAI") private var savedHasPaidAISelection = ""
   @EnvironmentObject private var categoryStore: CategoryStore
   @State private var userHasPaidAI: Bool? = OnboardingFlow.loadSavedHasPaidAISelection()
@@ -26,23 +26,17 @@ struct OnboardingFlow: View {
   }
 
   private var onboardingFilledSegments: Int {
-    switch step {
-    case .introVideo: return 0
-    case .roleSelection: return 0
-    case .downloadReason: return 1
-    case .referral: return 2
-    case .preferences: return 3
-    case .llmSelection: return 4
-    case .llmSetup: return 5
-    case .categories: return 6
-    case .categoryColors: return 7
-    case .screen: return 8
-    case .completion: return 9
+    switch canonicalize(step) {
+    case .howItWorks: return 1
+    case .screen: return 2
+    case .agentContext: return 3
+    case .completion: return 4
+    default: return 1
     }
   }
 
   private var showsProgressRing: Bool {
-    step != .introVideo && step != .llmSelection && step != .categoryColors
+    true
   }
 
   @ViewBuilder
@@ -66,6 +60,24 @@ struct OnboardingFlow: View {
         .transition(.opacity)
         .onAppear {
           AnalyticsService.shared.screen("onboarding_intro_video")
+          if !UserDefaults.standard.bool(forKey: "onboardingStarted") {
+            AnalyticsService.shared.capture("onboarding_started")
+            UserDefaults.standard.set(true, forKey: "onboardingStarted")
+            AnalyticsService.shared.setPersonProperties(["onboarding_status": "in_progress"])
+          }
+        }
+
+      case .howItWorks:
+        OnboardingHowPIPWorksStep(
+          onContinue: { advance() }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .transition(.opacity)
+        .onAppear {
+          _ = saveRouting(primary: .local, presentsError: false)
+          selectedProviderIDRawValue = LLMProviderID.local.rawValue
+          prepareCategoriesForOnboardingIfNeeded()
+          AnalyticsService.shared.screen("onboarding_how_pip_works")
           if !UserDefaults.standard.bool(forKey: "onboardingStarted") {
             AnalyticsService.shared.capture("onboarding_started")
             UserDefaults.standard.set(true, forKey: "onboardingStarted")
@@ -198,10 +210,7 @@ struct OnboardingFlow: View {
       case .categories:
         OnboardingCategoryStepView(
           onBack: {
-            // Go back to llmSetup, or llmSelection if they picked dayflow
-            let backStep: OnboardingStep =
-              (selectedProviderID == .dayflow) ? .llmSelection : .llmSetup
-            setStep(backStep)
+            setStep(.howItWorks)
           },
           onNext: {
             advance()
@@ -225,10 +234,20 @@ struct OnboardingFlow: View {
         .environmentObject(categoryStore)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+      case .agentContext:
+        OnboardingAgentContextStep(
+          onBack: { setStep(.screen) },
+          onContinue: { advance() }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+          AnalyticsService.shared.screen("onboarding_agent_context")
+        }
+
       case .screen:
         ScreenRecordingPermissionView(
           onBack: {
-            setStep(.categoryColors)
+            setStep(.howItWorks)
           },
           onNext: { advance() }
         )
@@ -259,7 +278,7 @@ struct OnboardingFlow: View {
       }
 
       // Progress ring — bottom-left, always in tree (opacity toggle preserves @State)
-      ProgressRingView(totalSegments: 9, filledSegments: onboardingFilledSegments)
+      ProgressRingView(totalSegments: 4, filledSegments: onboardingFilledSegments)
         .opacity(showsProgressRing ? 1 : 0)
         .animation(.easeInOut(duration: 0.3), value: showsProgressRing)
         .padding(.leading, 0)
@@ -333,10 +352,32 @@ struct OnboardingFlow: View {
     }
     userHasPaidAI = persistedHasPaidAISelection
     if let savedStep = OnboardingStep(rawValue: migratedValue) {
-      if savedStep == .categories {
+      let resolved = canonicalize(savedStep)
+      if resolved == .howItWorks || resolved == .categories {
         prepareCategoriesForOnboardingIfNeeded()
       }
-      step = savedStep
+      step = resolved
+      savedStepRawValue = resolved.rawValue
+    }
+  }
+
+  private func canonicalize(_ step: OnboardingStep) -> OnboardingStep {
+    switch step {
+    case .introVideo, .roleSelection, .downloadReason, .referral, .preferences,
+      .llmSelection, .llmSetup, .categories, .categoryColors:
+      return .howItWorks
+    default:
+      return step
+    }
+  }
+
+  private func productStep(after step: OnboardingStep) -> OnboardingStep {
+    switch canonicalize(step) {
+    case .howItWorks: return .screen
+    case .screen: return .agentContext
+    case .agentContext: return .completion
+    case .completion: return .completion
+    default: return .howItWorks
     }
   }
 
@@ -345,7 +386,7 @@ struct OnboardingFlow: View {
   }
 
   private func setStep(_ newStep: OnboardingStep) {
-    if newStep == .categories {
+    if newStep == .howItWorks || newStep == .categories {
       prepareCategoriesForOnboardingIfNeeded()
     }
     step = newStep
@@ -368,70 +409,33 @@ struct OnboardingFlow: View {
   }
 
   private func advance(selectedRole: String? = nil, extraProps: [String: Any] = [:]) {
-    switch step {
-    case .introVideo:
-      markStepCompleted(step)
-      step.next()
-      savedStepRawValue = step.rawValue
-    case .roleSelection:
-      let extraProps = selectedRole.map { ["role": $0] } ?? [:]
-      markStepCompleted(step, extraProps: extraProps)
-      step.next()
-      savedStepRawValue = step.rawValue
-    case .downloadReason:
-      markStepCompleted(step, extraProps: extraProps)
-      step.next()
-      savedStepRawValue = step.rawValue
-    case .referral:
-      markStepCompleted(step, extraProps: extraProps)
-      step.next()
-      savedStepRawValue = step.rawValue
-    case .preferences:
-      markStepCompleted(step, extraProps: extraProps)
-      step.next()
-      savedStepRawValue = step.rawValue
-    case .llmSelection:
-      markStepCompleted(step, extraProps: extraProps)
-      let nextStep: OnboardingStep =
-        (selectedProviderID == .dayflow) ? .categories : .llmSetup
-      setStep(nextStep)
-    case .llmSetup:
-      markStepCompleted(step)
-      setStep(.categories)
-    case .categories:
-      markStepCompleted(step)
-      setStep(.categoryColors)
-    case .categoryColors:
-      markStepCompleted(step)
-      setStep(.screen)
-    case .screen:
-      // Permission request is handled by ScreenRecordingPermissionView itself
-      markStepCompleted(step)
-      step.next()
-      savedStepRawValue = step.rawValue
+    var props = extraProps
+    if let selectedRole {
+      props["role"] = selectedRole
+    }
+    markStepCompleted(step, extraProps: props)
 
-      // Only try to start recording if we already have permission
-      if CGPreflightScreenCaptureAccess() {
-        Task {
-          do {
-            // Verify we have permission
-            _ = try await SCShareableContent.excludingDesktopWindows(
-              false, onScreenWindowsOnly: true)
-            // Start recording
-            await MainActor.run {
-              AppState.shared.setRecording(true, analyticsReason: "onboarding")
-            }
-          } catch {
-            // Permission not granted yet, that's ok
-            // It will start after restart
-            print("Will start recording after restart")
+    if step == .screen, CGPreflightScreenCaptureAccess() {
+      Task {
+        do {
+          _ = try await SCShareableContent.excludingDesktopWindows(
+            false, onScreenWindowsOnly: true)
+          await MainActor.run {
+            AppState.shared.setRecording(true, analyticsReason: "onboarding")
           }
+        } catch {
+          print("Will start recording after restart")
         }
       }
-    case .completion:
-      didOnboard = true
-      savedStepRawValue = 0  // Reset for next time
     }
+
+    if step == .completion {
+      didOnboard = true
+      savedStepRawValue = 0
+      return
+    }
+
+    setStep(productStep(after: step))
   }
 
   private static func loadSavedHasPaidAISelection(defaults: UserDefaults = .standard) -> Bool? {
@@ -454,47 +458,40 @@ struct OnboardingFlow: View {
 /// Wizard step order
 enum OnboardingStep: Int, CaseIterable {
   case introVideo, roleSelection, downloadReason, referral, preferences, llmSelection, llmSetup,
-    categories, categoryColors, screen, completion
+    categories, categoryColors, screen, agentContext, completion, howItWorks
 
   var analyticsName: String {
     switch self {
-    case .introVideo:
-      return "intro_video"
-    case .roleSelection:
-      return "role_selection"
-    case .downloadReason:
-      return "download_reason"
-    case .referral:
-      return "referral"
-    case .preferences:
-      return "preferences"
-    case .llmSelection:
-      return "llm_selection"
-    case .llmSetup:
-      return "llm_setup"
-    case .categories:
-      return "categories"
-    case .categoryColors:
-      return "category_colors"
-    case .screen:
-      return "screen_recording"
-    case .completion:
-      return "completion"
+    case .introVideo: return "intro_video"
+    case .roleSelection: return "role_selection"
+    case .howItWorks: return "how_pip_works"
+    case .downloadReason: return "download_reason"
+    case .referral: return "referral"
+    case .preferences: return "preferences"
+    case .llmSelection: return "llm_selection"
+    case .llmSetup: return "llm_setup"
+    case .categories: return "categories"
+    case .categoryColors: return "category_colors"
+    case .screen: return "screen_recording"
+    case .agentContext: return "agent_context"
+    case .completion: return "completion"
     }
   }
 
   static func hasPassedScreenRecordingStep(rawValue: Int) -> Bool {
     guard let step = OnboardingStep(rawValue: rawValue) else { return false }
-    return step.rawValue > OnboardingStep.screen.rawValue
+    return step == .agentContext || step == .completion
   }
 
-  mutating func next() { self = OnboardingStep(rawValue: rawValue + 1)! }
+  mutating func next() {
+    self = OnboardingStep(rawValue: rawValue + 1) ?? self
+  }
 }
 
 enum OnboardingStepMigration {
   static let schemaVersionKey = "onboardingStepSchemaVersion"
   private static let onboardingStepKey = "onboardingStep"
-  static let currentVersion = 5
+  static let currentVersion = 7
 
   @discardableResult
   static func migrateIfNeeded(defaults: UserDefaults = .standard) -> Int {
@@ -539,13 +536,24 @@ enum OnboardingStepMigration {
       migratedValue = migrateV4toV5(migratedValue)
     }
 
+    // v5 → v6: insert agentContext before completion; howItWorks is a new late raw value
+    // Old v5 completion = 10. New: agentContext = 10, completion = 11, howItWorks = 12
+    if storedVersion < 6 {
+      migratedValue = migrateV5toV6(migratedValue)
+    }
+
+    // v6 → v7: drop video, role, and category wizard. Start at howItWorks.
+    if storedVersion < 7 {
+      migratedValue = migrateV6toV7(migratedValue)
+    }
+
     defaults.set(migratedValue, forKey: onboardingStepKey)
     defaults.set(currentVersion, forKey: schemaVersionKey)
     return migratedValue
   }
 
   static func restoredStep(defaults: UserDefaults = .standard) -> OnboardingStep {
-    OnboardingStep(rawValue: migrateIfNeeded(defaults: defaults)) ?? .introVideo
+    OnboardingStep(rawValue: migrateIfNeeded(defaults: defaults)) ?? .howItWorks
   }
 
   static func migrateV0toV1(_ rawValue: Int) -> Int {
@@ -605,9 +613,31 @@ enum OnboardingStepMigration {
     }
   }
 
+  static func migrateV5toV6(_ rawValue: Int) -> Int {
+    switch rawValue {
+    case 0...9: return rawValue  // unchanged through screen
+    case 10: return OnboardingStep.completion.rawValue
+    default: return 0
+    }
+  }
+
+  static func migrateV6toV7(_ rawValue: Int) -> Int {
+    guard let step = OnboardingStep(rawValue: rawValue) else {
+      return OnboardingStep.howItWorks.rawValue
+    }
+    switch step {
+    case .screen, .agentContext, .completion, .howItWorks:
+      return rawValue
+    default:
+      return OnboardingStep.howItWorks.rawValue
+    }
+  }
+
   // Keep for testing compatibility
   static func migrateRawValue(_ rawValue: Int) -> Int {
-    migrateV4toV5(migrateV3toV4(migrateV2toV3(migrateV1toV2(migrateV0toV1(rawValue)))))
+    migrateV6toV7(
+      migrateV5toV6(
+        migrateV4toV5(migrateV3toV4(migrateV2toV3(migrateV1toV2(migrateV0toV1(rawValue)))))))
   }
 }
 
@@ -1013,12 +1043,12 @@ struct CompletionView: View {
 
       // Title section
       VStack(spacing: 8) {
-        Text("You are ready to go!")
+        Text("PIP is ready")
           .font(.custom("InstrumentSerif-Regular", size: 36))
           .foregroundColor(.black.opacity(0.9))
 
         Text(
-          "To get useful insights, let Dayflow run in the background for an hour or two to gather enough context, then check back in."
+          "Leave PIP running. After about 15 minutes the first cards appear. Then ask MultiTool or Codex what you did today."
         )
         .font(.custom("Figtree", size: 15))
         .foregroundColor(.black.opacity(0.6))
@@ -1031,7 +1061,7 @@ struct CompletionView: View {
           onFinish()
         },
         content: {
-          Text("Launch Dayflow")
+          Text("Open PIP")
             .font(.custom("Figtree", size: 16))
             .fontWeight(.semibold)
         },

@@ -95,6 +95,9 @@ final class CategoryStore: ObservableObject {
 
   func applyOnboardingPresetIfNeeded() {
     let defaults = UserDefaults.standard
+    if defaults.string(forKey: StoreKeys.onboardingSelectedRole) == nil {
+      defaults.set("Product Manager", forKey: StoreKeys.onboardingSelectedRole)
+    }
     guard let roleName = defaults.string(forKey: StoreKeys.onboardingSelectedRole) else {
       return
     }

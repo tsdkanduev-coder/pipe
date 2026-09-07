@@ -254,7 +254,7 @@ struct LLMProviderSetupView: View {
           TerminalCommandView(
             title: "Run this command:",
             subtitle: "Downloads Qwen3 Vision 4B for Ollama",
-            command: "ollama pull qwen3-vl:4b"
+            command: LocalModelPreset.recommended.ollamaPullCommand
           )
         } else if setupState.localEngine == .lmstudio {
           VStack(alignment: .leading, spacing: 16) {
@@ -424,7 +424,7 @@ struct LLMProviderSetupView: View {
         TerminalCommandView(
           title: "Run this command:",
           subtitle:
-            "This will download the \(LocalModelPreset.qwen3VL4B.displayName) model (about 5GB)",
+            "This will download the \(LocalModelPreset.recommended.displayName) model (about 3.4GB)",
           command: command
         )
 

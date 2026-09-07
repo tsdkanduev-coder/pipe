@@ -14,21 +14,48 @@ struct SettingsAgentAccessTabView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: SettingsStyle.sectionSpacing) {
+      policySection
       clientsSection
+      httpSection
       editsSection
       terminalSection
     }
     .onAppear { viewModel.refresh() }
   }
 
+  private var policySection: some View {
+    SettingsSection(
+      title: "How agents get context",
+      subtitle: PipeAgentContextPolicy.summary
+    ) {
+      VStack(alignment: .leading, spacing: 10) {
+        ForEach(PipeAgentContextPolicy.rules) { rule in
+          VStack(alignment: .leading, spacing: 2) {
+            Text(rule.tool)
+              .font(.system(size: 12, design: .monospaced))
+              .foregroundColor(SettingsStyle.ink)
+            Text("\(rule.task) — \(rule.why)")
+              .font(.custom("Figtree", size: 12))
+              .foregroundColor(SettingsStyle.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        Text(PipeAgentContextPolicy.trustRule)
+          .font(.custom("Figtree", size: 12))
+          .foregroundColor(SettingsStyle.meta)
+          .padding(.top, 4)
+      }
+      .padding(.vertical, 4)
+    }
+  }
+
   private var clientsSection: some View {
     SettingsSection(
       title: "Connect to AI tools",
       subtitle:
-        "Let Codex, Claude, Cursor, and other AI tools read your Dayflow timeline. "
-        + "Connections are saved to each tool's user configuration, so Dayflow is "
-        + "available across projects on this Mac. Nothing leaves your Mac except what "
-        + "you send in your own conversations."
+        "PIP writes an MCP server named pipe into each tool's user config. "
+        + "The first call should be get_context. Nothing leaves this Mac except "
+        + "what you send in your own conversations."
     ) {
       VStack(alignment: .leading, spacing: 0) {
         ForEach(viewModel.clients) { row in
@@ -43,7 +70,7 @@ struct SettingsAgentAccessTabView: View {
 
         SettingsRow(
           label: "Other apps",
-          subtitle: "Paste this into any MCP client's configuration.",
+          subtitle: "Paste this into any MCP client that is not listed above.",
           showsDivider: false
         ) {
           SettingsSecondaryButton(
@@ -121,7 +148,7 @@ struct SettingsAgentAccessTabView: View {
         SettingsRow(
           label: viewModel.editsEnabled ? "Edits are on" : "Edits are off",
           subtitle: viewModel.editsEnabled
-            ? "AI tools can make changes through Dayflow while it's running."
+            ? "AI tools can make changes through PIP while it's running."
             : nil,
           showsDivider: false
         ) {
@@ -131,19 +158,31 @@ struct SettingsAgentAccessTabView: View {
     }
   }
 
+  private var httpSection: some View {
+    SettingsSection(
+      title: "HTTP fallback",
+      subtitle:
+        "While PIP is running, any agent can fetch the same briefing without MCP."
+    ) {
+      SettingsCommandBlock(
+        command: PipeAgentContextPolicy.httpContextURL,
+        copied: viewModel.copiedHTTP,
+        copy: viewModel.copyHTTP
+      )
+    }
+  }
+
   private var terminalSection: some View {
     SettingsSection(
       title: "Terminal command",
       subtitle:
-        "Adds a `dayflow` command so you can see your timeline from any terminal. "
-        + "This isn't a separate package like an npm install: it links to the CLI already "
-        + "inside Dayflow, so the CLI always stays in sync with the app and can't break "
-        + "when the app updates. Nothing is downloaded and your shell configuration isn't touched."
+        "Adds a `pipe` command that links to the CLI inside PIP.app. "
+        + "Try `pipe context` for the same briefing MCP serves as get_context."
     ) {
       VStack(alignment: .leading, spacing: 12) {
         SettingsRow(
           label: viewModel.terminalInstalled ? "Installed" : "Not installed",
-          subtitle: viewModel.terminalInstalled ? "Try: dayflow timeline" : nil,
+          subtitle: viewModel.terminalInstalled ? "Try: pipe context" : nil,
           showsDivider: false
         ) {
           SettingsSecondaryButton(
@@ -259,6 +298,7 @@ final class AgentAccessViewModel: ObservableObject {
 
   @Published var clients: [ClientRow] = []
   @Published var copiedSnippet = false
+  @Published var copiedHTTP = false
   @Published var copiedTerminalCommand = false
   @Published var terminalInstalled = false
   @Published var terminalError: String?
@@ -428,6 +468,15 @@ final class AgentAccessViewModel: ObservableObject {
     publishClientRows()
   }
 
+  func copyHTTP() {
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(PipeAgentContextPolicy.httpContextURL, forType: .string)
+    copiedHTTP = true
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+      self?.copiedHTTP = false
+    }
+  }
+
   func copySnippet() {
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(
@@ -454,7 +503,7 @@ final class AgentAccessViewModel: ObservableObject {
   func toggleTerminalCommand() {
     terminalError = nil
     if terminalInstalled {
-      try? FileManager.default.removeItem(atPath: "/usr/local/bin/dayflow")
+      try? FileManager.default.removeItem(atPath: "/usr/local/bin/\(PipeIdentity.cliCommand)")
     } else {
       terminalError = AgentClientRegistration.installTerminalCommand()
     }

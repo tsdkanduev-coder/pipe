@@ -10,10 +10,11 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>teleportlabs.com.Dayflow</string>
+			<string>app.pip.macos</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>dayflow</string>
+				<string>pipe</string>
+				<string>pip</string>
 			</array>
 		</dict>
 	</array>
@@ -24,15 +25,15 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Dayflow uses Automation to focus or reopen your agent sessions in the terminal.</string>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>Dayflow uses screen access to create your timeline. Recordings stay on your Mac and you can pause or delete them anytime.</string>
+	<string>PIP uses screen access to create your timeline. Recordings stay on this Mac. You can pause or delete them anytime.</string>
 	<key>PHPostHogApiKey</key>
 	<string>$(POSTHOG_API_KEY)</string>
 	<key>SUAllowsAutomaticUpdates</key>
-	<true/>
+	<false/>
 	<key>SUAutomaticallyUpdate</key>
-	<true/>
+	<false/>
 	<key>SUEnableAutomaticChecks</key>
-	<true/>
+	<false/>
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>

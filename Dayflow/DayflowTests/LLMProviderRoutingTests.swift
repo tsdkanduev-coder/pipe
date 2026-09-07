@@ -29,7 +29,7 @@ final class LLMProviderRoutingTests: XCTestCase {
 
     let migration = LegacyLLMProviderMigration.migrate(from: defaults)
 
-    XCTAssertEqual(migration.routing, LLMProviderRouting(primary: .gemini))
+    XCTAssertEqual(migration.routing, LLMProviderRouting(primary: .local))
     XCTAssertTrue(migration.sharedPromptOverrides.isEmpty)
     XCTAssertNil(migration.dayflowEndpointOverride)
     XCTAssertNil(migration.localEndpointOverride)

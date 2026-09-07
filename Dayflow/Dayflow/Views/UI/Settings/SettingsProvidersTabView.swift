@@ -9,7 +9,7 @@ struct SettingsProvidersTabView: View {
     VStack(alignment: .leading, spacing: SettingsStyle.sectionSpacing) {
       if viewModel.currentProvider == .local, viewModel.showLocalModelUpgradeBanner {
         LocalModelUpgradeBanner(
-          preset: .qwen3VL4B,
+          preset: .qwen35_4b,
           onKeepLegacy: { viewModel.markUpgradeBannerKeepLegacy() },
           onUpgrade: {
             viewModel.markUpgradeBannerUpgrade()

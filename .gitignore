@@ -34,3 +34,6 @@ codexeval/
 
 # Dayflow CLI SwiftPM artifacts
 tools/dayflow-cli/.build/
+
+# Local Xcode derived data
+.build/

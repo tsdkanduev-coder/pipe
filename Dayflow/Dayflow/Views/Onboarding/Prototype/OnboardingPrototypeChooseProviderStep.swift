@@ -63,6 +63,14 @@ struct OnboardingPrototypeChooseProviderStep: View {
 
   private static let providers: [ComparisonProvider] = [
     ComparisonProvider(
+      providerID: .local,
+      title: "Local PIP",
+      accuracy: RatedValue(text: "Good", rating: .best),
+      subscription: "Free, on this Mac",
+      ease: RatedValue(text: "Ollama + Qwen 3.5", rating: .best),
+      notes: "Default. Uses qwen3.5:4b on this machine. Nothing leaves the Mac."
+    ),
+    ComparisonProvider(
       providerID: .dayflow,
       title: "Dayflow Pro",
       accuracy: RatedValue(text: "Best", rating: .best),
@@ -102,19 +110,11 @@ struct OnboardingPrototypeChooseProviderStep: View {
       ease: RatedValue(text: "API key and model", rating: .medium),
       notes: "Uses OpenRouter or any OpenAI-compatible endpoint."
     ),
-    ComparisonProvider(
-      providerID: .local,
-      title: "Local AI",
-      accuracy: RatedValue(text: "Decent", rating: .basic),
-      subscription: "Free",
-      ease: RatedValue(text: "Extensive setup", rating: .basic),
-      notes: "Requires 16GB+ RAM, 4GB free disk space, M1 or later chip preferred"
-    ),
   ]
 
   var body: some View {
     VStack(spacing: 0) {
-      Text("Choose a way to run Dayflow")
+      Text("Choose a way to run PIP")
         .font(.custom("InstrumentSerif-Regular", size: 40))
         .tracking(-1.2)
         .multilineTextAlignment(.center)

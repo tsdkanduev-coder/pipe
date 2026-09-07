@@ -13,13 +13,15 @@ struct LocalModelInstructionSet {
 }
 
 enum LocalModelPreset: String, CaseIterable, Codable {
+  case qwen35_4b = "qwen35_4b"
   case qwen3VL4B = "qwen3_vl_4b"
   case qwen25VL3B = "qwen25_vl_3b"
 
-  static let recommended: LocalModelPreset = .qwen3VL4B
+  static let recommended: LocalModelPreset = .qwen35_4b
 
   var displayName: String {
     switch self {
+    case .qwen35_4b: return "Qwen 3.5 4B"
     case .qwen3VL4B: return "Qwen3-VL 4B"
     case .qwen25VL3B: return "Qwen2.5-VL 3B"
     }
@@ -27,26 +29,35 @@ enum LocalModelPreset: String, CaseIterable, Codable {
 
   var highlightBullets: [String] {
     switch self {
+    case .qwen35_4b:
+      return [
+        "Native vision + text in one local model",
+        "Fits a 16GB Apple Silicon Mac (~3.4GB)",
+        "Default for PIP — no cloud key required",
+      ]
     case .qwen3VL4B:
       return [
-        "New, most powerful local VLM",
-        "Longer reasoning chains for complex sessions",
-        "Fits on most Apple Silicon machines (≈5GB VRAM)",
+        "Previous Dayflow local default",
+        "Vision-only specialist, slightly heavier",
       ]
     case .qwen25VL3B:
       return [
-        "Legacy default for Dayflow local mode",
-        "Lower VRAM footprint but weaker perception",
+        "Legacy fallback",
+        "Lower VRAM, weaker screen reading",
       ]
     }
   }
 
   func modelId(for engine: LocalEngine) -> String {
     switch (self, engine) {
+    case (.qwen35_4b, .lmstudio):
+      return "Qwen3.5-4B"
     case (.qwen3VL4B, .lmstudio):
       return "Qwen3-VL-4B-Instruct"
     case (.qwen25VL3B, .lmstudio):
       return "qwen2.5-vl-3b-instruct"
+    case (.qwen35_4b, _):
+      return "qwen3.5:4b"
     case (.qwen3VL4B, _):
       return "qwen3-vl:4b"
     case (.qwen25VL3B, _):
@@ -59,55 +70,44 @@ enum LocalModelPreset: String, CaseIterable, Codable {
     case .ollama, .custom:
       return LocalModelInstructionSet(
         title: "Install via Ollama",
-        subtitle: "Make sure you're on Ollama 0.12.10 or newer before pulling the model.",
+        subtitle: "PIP uses a local vision model. Keep Ollama running in the background.",
         bullets: [
           "Open Terminal",
-          "Run the pull command below (≈5GB download)",
-          "Keep Ollama running in the background",
+          "Run the pull command below (≈3.4GB download)",
+          "Keep Ollama running while PIP records",
         ],
         commandTitle: "Run this command:",
         commandSubtitle: "Downloads \(displayName) for Ollama",
         command: ollamaPullCommand,
         buttonTitle: nil,
         buttonURL: nil,
-        note: "Need to stay on Qwen2.5? Keep your current model selected and skip this upgrade."
+        note: "On a 16GB Mac stay on the 4B model. 9B and larger will swap."
       )
     case .lmstudio:
       return LocalModelInstructionSet(
         title: "Install inside LM Studio",
-        subtitle:
-          "Make sure you're on 0.3.31. Use LM Studio's model browser to download the GGUF build.",
+        subtitle: "Download the Instruct / 4B build, then start Local Server.",
         bullets: [
           "Open LM Studio and click the Models tab",
           "Search for \"\(modelId(for: .lmstudio))\"",
-          "Download the Instruct variant, then start Local Server",
+          "Download it, then start Local Server",
         ],
         commandTitle: nil,
         commandSubtitle: nil,
         command: nil,
-        buttonTitle: "Open download in LM Studio",
-        buttonURL: lmStudioDownloadURL,
+        buttonTitle: "Open LM Studio",
+        buttonURL: URL(string: "https://lmstudio.ai"),
         note:
-          "Tip: enable \"Launch local server\" so Dayflow can talk to LM Studio at \(LocalEngine.lmstudio.defaultBaseURL)."
+          "Enable \"Launch local server\" so PIP can talk to LM Studio at \(LocalEngine.lmstudio.defaultBaseURL)."
       )
     }
   }
 
   var ollamaPullCommand: String {
     switch self {
+    case .qwen35_4b: return "ollama pull qwen3.5:4b"
     case .qwen3VL4B: return "ollama pull qwen3-vl:4b"
     case .qwen25VL3B: return "ollama pull qwen2.5vl:3b"
-    }
-  }
-
-  var lmStudioDownloadURL: URL? {
-    switch self {
-    case .qwen3VL4B:
-      return URL(
-        string: "https://model.lmstudio.ai/download/lmstudio-community/Qwen3-VL-4B-Instruct-GGUF")
-    case .qwen25VL3B:
-      return URL(
-        string: "https://model.lmstudio.ai/download/lmstudio-community/Qwen2.5-VL-3B-Instruct-GGUF")
     }
   }
 }
@@ -150,9 +150,10 @@ enum LocalModelPreferences {
 
   static func shouldShowUpgradeBanner(engine: LocalEngine, modelId: String) -> Bool {
     if defaults.bool(forKey: upgradeDismissedKey) { return false }
-    if currentPreset() == .qwen3VL4B { return false }
+    if currentPreset() == .qwen35_4b { return false }
     let normalized = modelId.trimmingCharacters(in: .whitespacesAndNewlines)
-    return normalized == LocalModelPreset.qwen25VL3B.modelId(for: engine)
+    return normalized == LocalModelPreset.qwen3VL4B.modelId(for: engine)
+      || normalized == LocalModelPreset.qwen25VL3B.modelId(for: engine)
   }
 
   static func markUpgradeDismissed(_ dismissed: Bool) {

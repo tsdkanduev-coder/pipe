@@ -1,36 +1,33 @@
 //
 //  AgentClientRegistration.swift
-//  Dayflow
+//  PIP
 //
-//  Connects MCP clients to the bundled `dayflow` binary. Clients with their
-//  own install flow (Cursor, VS Code) get a deeplink and write their own
-//  config after their own consent dialog. Claude Code and Claude Desktop are
-//  configured directly, and only ever the "dayflow" entry we own.
-//
-//  Configs record an absolute path into the app bundle, which goes stale if
-//  the app moves — repairStaleRegistrations() runs at launch and fixes any
-//  entry we previously wrote.
+//  Connects MCP clients to the bundled `pipe` binary. Cursor and MultiTool
+//  get a config file we write ourselves. Claude Code / Desktop keep their
+//  JSON files. Codex uses its own CLI.
 //
 
 import AppKit
 import Foundation
 
 enum AgentClient: String, CaseIterable, Identifiable {
-  case codex
-  case claudeCode
-  case claudeDesktop
+  case multiTool
   case cursor
   case vsCode
+  case claudeCode
+  case claudeDesktop
+  case codex
 
   var id: String { rawValue }
 
   var displayName: String {
     switch self {
-    case .codex: return "Codex"
-    case .claudeCode: return "Claude Code"
-    case .claudeDesktop: return "Claude Desktop"
+    case .multiTool: return "MultiTool"
     case .cursor: return "Cursor"
     case .vsCode: return "VS Code"
+    case .claudeCode: return "Claude Code"
+    case .claudeDesktop: return "Claude Desktop"
+    case .codex: return "Codex"
     }
   }
 }
@@ -38,22 +35,29 @@ enum AgentClient: String, CaseIterable, Identifiable {
 @MainActor
 enum AgentClientRegistration {
 
-  /// The bundled CLI. This is what every client config points at.
-  /// Lives in Contents/Helpers, NOT Contents/MacOS — the filesystem is
-  /// case-insensitive, so "dayflow" next to the "Dayflow" app executable
-  /// would overwrite it.
   static var cliPath: String {
-    Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/dayflow").path
+    let helpers = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers")
+    let pipe = helpers.appendingPathComponent("pipe").path
+    if FileManager.default.isExecutableFile(atPath: pipe) { return pipe }
+    return helpers.appendingPathComponent("dayflow").path
   }
 
-  /// The JSON snippet for clients we don't integrate with directly.
   static var manualConfigSnippet: String {
     """
-    "dayflow": {
+    "\(PipeIdentity.mcpServerName)": {
       "command": "\(cliPath)",
       "args": ["mcp"]
     }
     """
+  }
+
+  private static var cursorConfigURL: URL {
+    FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".cursor/mcp.json")
+  }
+
+  private static var multiToolConfigURL: URL {
+    FileManager.default.homeDirectoryForCurrentUser
+      .appendingPathComponent(".config/gigatool/opencode.json")
   }
 
   private static var claudeCodeConfigURL: URL {
@@ -70,6 +74,9 @@ enum AgentClientRegistration {
   static func isInstalled(_ client: AgentClient) -> Bool {
     let fileManager = FileManager.default
     switch client {
+    case .multiTool:
+      return fileManager.fileExists(atPath: "/Applications/MultiTool.app")
+        || fileManager.fileExists(atPath: "/Applications/GigaTool.app")
     case .codex:
       return CodexExecutableResolver.shared.resolve() != nil
     case .claudeCode:
@@ -84,18 +91,19 @@ enum AgentClientRegistration {
     }
   }
 
-  /// True when the client's config already has a dayflow entry we can see.
-  /// Deeplink clients own their config, so this is only knowable for the two
-  /// we write directly.
   static func isConnected(_ client: AgentClient) -> Bool {
     switch client {
     case .codex:
       return CodexMCPRegistration(cliPath: cliPath).status() == .connected
     case .claudeCode:
-      return dayflowEntry(inConfigAt: claudeCodeConfigURL) != nil
+      return mcpEntry(inConfigAt: claudeCodeConfigURL, rootKey: "mcpServers") != nil
     case .claudeDesktop:
-      return dayflowEntry(inConfigAt: claudeDesktopConfigURL) != nil
-    case .cursor, .vsCode:
+      return mcpEntry(inConfigAt: claudeDesktopConfigURL, rootKey: "mcpServers") != nil
+    case .cursor:
+      return mcpEntry(inConfigAt: cursorConfigURL, rootKey: "mcpServers") != nil
+    case .multiTool:
+      return mcpEntry(inConfigAt: multiToolConfigURL, rootKey: "mcp") != nil
+    case .vsCode:
       return false
     }
   }
@@ -104,8 +112,23 @@ enum AgentClientRegistration {
 
   enum RegistrationResult {
     case connected
-    case openedInstaller  // deeplink clients finish in their own UI
+    case openedInstaller
     case failed(String)
+  }
+
+  static var preferredClients: [AgentClient] { [.multiTool, .codex, .cursor] }
+
+  @discardableResult
+  static func connectPreferredClients() -> [AgentClient] {
+    preferredClients.compactMap { client in
+      if client != .cursor, !isInstalled(client) { return nil }
+      if case .connected = connect(client) { return client }
+      return nil
+    }
+  }
+
+  static func connectedPreferredNames() -> [String] {
+    preferredClients.filter { isConnected($0) }.map(\.displayName)
   }
 
   static func connect(_ client: AgentClient) -> RegistrationResult {
@@ -114,25 +137,22 @@ enum AgentClientRegistration {
       switch CodexMCPRegistration(cliPath: cliPath).connect() {
       case .connected: return .connected
       case .notInstalled: return .failed("Codex isn't installed on this Mac.")
-      case .disconnected: return .failed("Codex didn't keep the Dayflow connection.")
+      case .disconnected: return .failed("Codex didn't keep the PIP connection.")
       case .failed(let message): return .failed(message)
       }
     case .claudeCode:
-      return writeDayflowEntry(configAt: claudeCodeConfigURL)
+      return writeStdioEntry(configAt: claudeCodeConfigURL, rootKey: "mcpServers", includeType: true)
     case .claudeDesktop:
-      return writeDayflowEntry(configAt: claudeDesktopConfigURL)
+      return writeStdioEntry(
+        configAt: claudeDesktopConfigURL, rootKey: "mcpServers", includeType: true)
     case .cursor:
-      let config = ["command": cliPath, "args": ["mcp"]] as [String: Any]
-      guard let data = try? JSONSerialization.data(withJSONObject: config),
-        let url = URL(
-          string:
-            "cursor://anysphere.cursor-deeplink/mcp/install?name=dayflow&config=\(data.base64EncodedString())"
-        )
-      else { return .failed("Could not build the Cursor install link.") }
-      NSWorkspace.shared.open(url)
-      return .openedInstaller
+      return writeStdioEntry(configAt: cursorConfigURL, rootKey: "mcpServers", includeType: false)
+    case .multiTool:
+      return writeMultiToolEntry()
     case .vsCode:
-      let config: [String: Any] = ["name": "dayflow", "command": cliPath, "args": ["mcp"]]
+      let config: [String: Any] = [
+        "name": PipeIdentity.mcpServerName, "command": cliPath, "args": ["mcp"],
+      ]
       guard let data = try? JSONSerialization.data(withJSONObject: config),
         let encoded = String(data: data, encoding: .utf8)?.addingPercentEncoding(
           withAllowedCharacters: .alphanumerics),
@@ -147,25 +167,34 @@ enum AgentClientRegistration {
     switch client {
     case .codex:
       _ = CodexMCPRegistration(cliPath: cliPath).disconnect()
-    case .claudeCode: removeDayflowEntry(configAt: claudeCodeConfigURL)
-    case .claudeDesktop: removeDayflowEntry(configAt: claudeDesktopConfigURL)
-    case .cursor, .vsCode: break  // Their config; removed in their UI.
+    case .claudeCode:
+      removeEntry(configAt: claudeCodeConfigURL, rootKey: "mcpServers")
+    case .claudeDesktop:
+      removeEntry(configAt: claudeDesktopConfigURL, rootKey: "mcpServers")
+    case .cursor:
+      removeEntry(configAt: cursorConfigURL, rootKey: "mcpServers")
+    case .multiTool:
+      removeEntry(configAt: multiToolConfigURL, rootKey: "mcp")
+    case .vsCode:
+      break
     }
   }
 
   // MARK: - Config file editing
 
-  private static func dayflowEntry(inConfigAt url: URL) -> [String: Any]? {
+  private static func mcpEntry(inConfigAt url: URL, rootKey: String) -> [String: Any]? {
     guard let data = try? Data(contentsOf: url),
       let config = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      let servers = config["mcpServers"] as? [String: Any]
+      let servers = config[rootKey] as? [String: Any]
     else { return nil }
-    return servers["dayflow"] as? [String: Any]
+    return servers[PipeIdentity.mcpServerName] as? [String: Any]
   }
 
-  /// Adds or updates only the "dayflow" key under mcpServers, preserving
-  /// everything else in the file byte-for-byte semantically.
-  private static func writeDayflowEntry(configAt url: URL) -> RegistrationResult {
+  private static func writeStdioEntry(
+    configAt url: URL,
+    rootKey: String,
+    includeType: Bool
+  ) -> RegistrationResult {
     var config: [String: Any] = [:]
     if let data = try? Data(contentsOf: url) {
       guard let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
@@ -175,10 +204,40 @@ enum AgentClientRegistration {
       config = existing
     }
 
-    var servers = config["mcpServers"] as? [String: Any] ?? [:]
-    servers["dayflow"] = ["type": "stdio", "command": cliPath, "args": ["mcp"]]
-    config["mcpServers"] = servers
+    var servers = config[rootKey] as? [String: Any] ?? [:]
+    var entry: [String: Any] = ["command": cliPath, "args": ["mcp"]]
+    if includeType { entry["type"] = "stdio" }
+    servers[PipeIdentity.mcpServerName] = entry
+    config[rootKey] = servers
 
+    return writeJSON(config, to: url)
+  }
+
+  private static func writeMultiToolEntry() -> RegistrationResult {
+    let url = multiToolConfigURL
+    var config: [String: Any] = [:]
+    if let data = try? Data(contentsOf: url) {
+      guard let existing = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        return .failed("opencode.json exists but isn't valid JSON — not touching it.")
+      }
+      config = existing
+    }
+    if config["$schema"] == nil {
+      config["$schema"] = "./config-schema.json"
+    }
+
+    var servers = config["mcp"] as? [String: Any] ?? [:]
+    servers[PipeIdentity.mcpServerName] = [
+      "type": "local",
+      "command": [cliPath, "mcp"],
+      "enabled": true,
+      "timeout": 15_000,
+    ] as [String: Any]
+    config["mcp"] = servers
+    return writeJSON(config, to: url)
+  }
+
+  private static func writeJSON(_ config: [String: Any], to url: URL) -> RegistrationResult {
     do {
       try FileManager.default.createDirectory(
         at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -191,14 +250,14 @@ enum AgentClientRegistration {
     }
   }
 
-  private static func removeDayflowEntry(configAt url: URL) {
+  private static func removeEntry(configAt url: URL, rootKey: String) {
     guard let data = try? Data(contentsOf: url),
       var config = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-      var servers = config["mcpServers"] as? [String: Any],
-      servers["dayflow"] != nil
+      var servers = config[rootKey] as? [String: Any],
+      servers[PipeIdentity.mcpServerName] != nil
     else { return }
-    servers.removeValue(forKey: "dayflow")
-    config["mcpServers"] = servers
+    servers.removeValue(forKey: PipeIdentity.mcpServerName)
+    config[rootKey] = servers
     if let updated = try? JSONSerialization.data(
       withJSONObject: config, options: [.prettyPrinted, .sortedKeys])
     {
@@ -206,18 +265,31 @@ enum AgentClientRegistration {
     }
   }
 
-  /// If the app moved since a config was written, its recorded path is dead.
-  /// Called at launch; rewrites any entry we own whose command doesn't match
-  /// the running bundle. Never touches entries the user added themselves
-  /// beyond the "dayflow" key.
   static func repairStaleRegistrations() {
-    for url in [claudeCodeConfigURL, claudeDesktopConfigURL] {
-      guard let entry = dayflowEntry(inConfigAt: url),
-        let recorded = entry["command"] as? String,
-        recorded != cliPath
-      else { continue }
-      _ = writeDayflowEntry(configAt: url)
-      print("ℹ️ AgentAccess: repaired stale dayflow path in \(url.lastPathComponent)")
+    let owned: [(URL, String)] = [
+      (claudeCodeConfigURL, "mcpServers"),
+      (claudeDesktopConfigURL, "mcpServers"),
+      (cursorConfigURL, "mcpServers"),
+    ]
+    for (url, rootKey) in owned {
+      guard let entry = mcpEntry(inConfigAt: url, rootKey: rootKey) else { continue }
+      if let recorded = entry["command"] as? String, recorded != cliPath {
+        _ = writeStdioEntry(configAt: url, rootKey: rootKey, includeType: rootKey == "mcpServers")
+      }
+    }
+
+    if let entry = mcpEntry(inConfigAt: multiToolConfigURL, rootKey: "mcp") {
+      let recorded: String?
+      if let command = entry["command"] as? String {
+        recorded = command
+      } else if let command = entry["command"] as? [String] {
+        recorded = command.first
+      } else {
+        recorded = nil
+      }
+      if let recorded, recorded != cliPath {
+        _ = writeMultiToolEntry()
+      }
     }
 
     let codexRegistration = CodexMCPRegistration(cliPath: cliPath)
@@ -229,16 +301,16 @@ enum AgentClientRegistration {
   // MARK: - Terminal command
 
   static var manualTerminalInstallCommand: String {
-    "sudo mkdir -p /usr/local/bin && sudo ln -sf \(LoginShellRunner.shellEscape(cliPath)) /usr/local/bin/dayflow"
+    "sudo mkdir -p /usr/local/bin && sudo ln -sf \(LoginShellRunner.shellEscape(cliPath)) /usr/local/bin/\(PipeIdentity.cliCommand)"
   }
 
   static var terminalCommandInstalled: Bool {
-    (try? FileManager.default.destinationOfSymbolicLink(atPath: "/usr/local/bin/dayflow"))
-      == cliPath
+    (try? FileManager.default.destinationOfSymbolicLink(
+      atPath: "/usr/local/bin/\(PipeIdentity.cliCommand)")) == cliPath
   }
 
   static func installTerminalCommand() -> String? {
-    let linkPath = "/usr/local/bin/dayflow"
+    let linkPath = "/usr/local/bin/\(PipeIdentity.cliCommand)"
     let fileManager = FileManager.default
     do {
       if fileManager.fileExists(atPath: linkPath) {
